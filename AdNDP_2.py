@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import itertools
+import collections
 import warnings
 from shutil import copyfile
 
@@ -15,36 +16,112 @@ ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
 
 
+class AdNDPContent(object):
+    def __init__(
+        self,
+        nbo_path,
+        mo_path,
+        amount_of_atoms,
+        valence_pairs,
+        total_pairs,
+        total_basis_funcs,
+        basis_funcs_per_atom
+    ):
+        self.nbo_path = nbo_path
+        self.mo_path = mo_path
+
+        self.amount_of_atoms = amount_of_atoms
+        self.valence_pairs = valence_pairs
+        self.total_pairs = total_pairs
+        self.total_basis_funcs = total_basis_funcs
+
+        self.basis_funcs_per_atom = basis_funcs_per_atom
+
+
+class LogsReader(object):
+    def __init__(self, nbo_path, mo_path):
+        self._nbo_path = nbo_path
+        self._mo_path = mo_path
+
+    def create_adndp(self):
+        # amount of atoms
+        amount_of_atoms = None
+        # Valence electron pairs
+        valence_electron_pairs = None
+        # Total electron pairs
+        total_electro_pairs = None
+        # Total amount of basis functions
+        total_basis_funcs = None
+        # Basis functions per atom
+        basis_funcs_per_atom = None
+
+        lines_queue = collections.deque(self.readlines())
+
+        while lines_queue:
+            line = lines_queue.popleft()
+            if amount_of_atoms is None and "NAtoms" in line:
+                amount_of_atoms = int(line.split()[1])
+
+            if (
+                valence_electron_pairs is None
+                and line.startswith("   Valence")
+            ):
+                valence_electron_pairs = int(line[51:55]) // 2
+
+            if total_basis_funcs is None and "basis functions," in line:
+                total_basis_funcs = int(line[:7])
+
+            if (
+                total_electro_pairs is None
+                and "alpha electrons"
+                in line and "beta electrons" in line
+            ):
+                total_electro_pairs = (int(line[:7]) + int(line[24:32])) // 2
+
+            if (
+                line.startswith(
+                    "   NAO  Atom  No  lang   Type(AO)    Occupancy"
+                )
+                or line.startswith("  NAO Atom No lang   Type(AO)")
+            ):
+                # Pop one line (for some reason?)
+                lines_queue.popleft()
+                # Basis functions per atom
+                basis_funcs_per_atom = [0 for n in range(amount_of_atoms)]
+                for idx in range(amount_of_atoms):
+                    counter = 0
+                    while len(lines_queue.popleft()) > 2:
+                        counter += 1
+                    basis_funcs_per_atom[idx] = counter
+
+        basis_funcs_per_atom = basis_funcs_per_atom or []
+
+        return AdNDPContent(
+            self.nbo_path,
+            self.mo_path,
+            amount_of_atoms or 0,
+            valence_electron_pairs or 0,
+            total_electro_pairs or 0,
+            total_basis_funcs or 0,
+            basis_funcs_per_atom
+        )
+
+
 def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
     nbo_fn=input('Enter NBO file name: ')
     mo_fn=input('Enter MO file name: ')
     nbo_fn = os.path.abspath(nbo_fn)
     mo_fn = os.path.abspath(mo_fn)
-    NAtoms=0 #amount of atoms
-    VEP=0 #Valence electron pairs
-    TEP=0 #Total electron pairs
-    BF=0 #Total amount of basis functions
-    f=open(nbo_fn, 'r')
-    for i in f:
-        if 'NAtoms' in i and NAtoms==0:
-            Div=i.split()
-            NAtoms=int(Div[1])
-        if i.startswith('   Valence') and VEP==0:
-            VEP=int(i[51:55])//2
-        if 'basis functions,' in i and BF==0:
-            BF=int(i[:7])
-        if 'alpha electrons' in i and 'beta electrons' in i and TEP==0:
-            TEP=(int(i[:7])+int(i[24:32]))//2
-        if i.startswith('   NAO  Atom  No  lang   Type(AO)    Occupancy'):
-            BEA=[0 for n in range(NAtoms)] #Basis functions per atom
-            f.readline()
-            for j in range(NAtoms):
-                counter=0
-                while len(f.readline())>2:
-                    counter+=1
-                BEA[j]=counter
-    f.close()
+
+    reader = LogsReader(nbo_fn, mo_fn)
+    adndp_content = reader.create_adndp()
+
+    NAtoms = adndp_content.amount_of_atoms
+    VEP = adndp_content.valence_pairs
+    TEP = adndp_content.total_pairs
+    BF = adndp_content.total_basis_funcs
+    BEA = adndp_content.basis_funcs_per_atom
     f=open(ADNDP_BASENAME, 'w')
     f.write('NBO filename\n'+nbo_fn+'\nNumber of atoms\n'+str(NAtoms)+'\nAmount of valence electronic pairs\n'+str(VEP)+'\n')
     f.write('Total amount of electronic pairs\n'+str(TEP)+'\nTotal amount of basis functions\n'+str(BF)+'\nAmount of basis functions on each atom\n')
