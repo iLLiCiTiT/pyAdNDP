@@ -11,11 +11,16 @@ if sys.version_info[0] < 3:
 import numpy as np
 import pickle
 
+ADNDP_BASENAME = "AdNDP.in"
+DISTANCE_BASENAME = "Distance.in"
+
 
 def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
     nbo_fn=input('Enter NBO file name: ')
     mo_fn=input('Enter MO file name: ')
+    nbo_fn = os.path.abspath(nbo_fn)
+    mo_fn = os.path.abspath(mo_fn)
     NAtoms=0 #amount of atoms
     VEP=0 #Valence electron pairs
     TEP=0 #Total electron pairs
@@ -40,7 +45,7 @@ def A():
                     counter+=1
                 BEA[j]=counter
     f.close()
-    f=open('AdNDP.in', 'w')
+    f=open(ADNDP_BASENAME, 'w')
     f.write('NBO filename\n'+nbo_fn+'\nNumber of atoms\n'+str(NAtoms)+'\nAmount of valence electronic pairs\n'+str(VEP)+'\n')
     f.write('Total amount of electronic pairs\n'+str(TEP)+'\nTotal amount of basis functions\n'+str(BF)+'\nAmount of basis functions on each atom\n')
     for i in BEA:
@@ -51,7 +56,7 @@ def A():
     f.write('CMO filename\n'+mo_fn+'\n')
     f.close()
 
-    f = open('Distance.in', 'w+')
+    f = open(DISTANCE_BASENAME, 'w+')
     Dist=[0 for n in range(NAtoms)]
     f.write(' '.join(str(n) for n in Dist)+'\n')
     f.write('Mode(LD-Late Depleting, FC-"Found-Cut", LDFC-hybrid): LD\n')
@@ -60,32 +65,50 @@ def A():
 
     if system=="Y":
         print('Switching to Open Shell mode preparing mode...')
-        os.mkdir('alpha')
-        os.mkdir('beta')
 
-        copyfile(mo_fn, 'alpha\\'+mo_fn)
-        copyfile(mo_fn, 'beta\\'+mo_fn)
-        copyfile('AdNDP.in', 'alpha\\AdNDP.in')
-        copyfile('AdNDP.in', 'beta\\AdNDP.in')
-        copyfile('Distance.in', 'alpha\\Distance.in')
-        f=open('alpha\\Distance.in', 'a')
+        alpha_dir = os.path.abspath("alpha")
+        beta_dir = os.path.abspath("beta")
+        if not os.path.exists(alpha_dir):
+            os.mkdir(alpha_dir)
+
+        if not os.path.exists(beta_dir):
+            os.mkdir(beta_dir)
+
+        nbo_basename = os.path.basename(nbo_fn)
+        mo_basename = os.path.basename(mo_fn)
+        alpha_mo_path = os.path.join(alpha_dir, mo_basename)
+        beta_mo_path = os.path.join(beta_dir, mo_basename)
+        alpha_nbo_path = os.path.join(alpha_dir, nbo_basename)
+        beta_nbo_path = os.path.join(beta_dir, nbo_basename)
+        alpha_adndp_path = os.path.join(alpha_dir, ADNDP_BASENAME)
+        beta_adndp_path = os.path.join(beta_dir, ADNDP_BASENAME)
+        alpha_distance_path = os.path.join(alpha_dir, DISTANCE_BASENAME)
+        beta_distance_path = os.path.join(beta_dir, DISTANCE_BASENAME)
+
+        copyfile(mo_fn, alpha_mo_path)
+        copyfile(mo_fn, beta_mo_path)
+        copyfile(ADNDP_BASENAME, alpha_adndp_path)
+        copyfile(ADNDP_BASENAME, beta_adndp_path)
+        copyfile(DISTANCE_BASENAME, alpha_distance_path)
+        copyfile(DISTANCE_BASENAME, beta_distance_path)
+
+        f=open(alpha_distance_path, 'a')
         f.write('\nalpha')
         f.close()
-        copyfile('Distance.in', 'beta\\Distance.in')
-        f=open('beta\\Distance.in', 'a')
+        f=open(beta_distance_path, 'a')
         f.write('\nbeta')
         f.close()
-        os.remove("AdNDP.in")
-        os.remove("Distance.in")
+        os.remove(ADNDP_BASENAME)
+        os.remove(DISTANCE_BASENAME)
 
         f=open(nbo_fn,'r')
-        g=open('alpha\\'+nbo_fn, 'w')
+        g=open(alpha_nbo_path, 'w')
         for i in f:
             if not(i.startswith(' *******         Beta  spin orbitals         *******')):
                 g.write(i)
             else: break
         g.close()
-        g=open('beta\\'+nbo_fn, 'w')
+        g=open(beta_nbo_path, 'w')
         f.close()
         f=open(nbo_fn,'r')
         trig=False
@@ -116,8 +139,8 @@ def AdNDP():
             return 0
 
     #Reading Distance.in
-    if FileCheck('Distance.in'):
-        f=open('Distance.in','r')
+    if FileCheck(DISTANCE_BASENAME):
+        f=open(DISTANCE_BASENAME,'r')
         Dist_thresholds=list(map(float, f.readline().split()))
         Mode=f.readline()[54:-1]
         Resid_save=f.readline()[30:-1]
@@ -136,7 +159,7 @@ def AdNDP():
     ####READING FILES
 
     #TNV AdNDP.in reading + generating Resid.Dens.
-    f=open('AdNDP.in', 'r')
+    f=open(ADNDP_BASENAME, 'r')
     file=[]
     for i in f:
         file.append(i)
@@ -596,8 +619,8 @@ def AdNDP_FR():
             return 0
 
     #Reading Distance.in
-    if FileCheck('Distance.in'):
-        f=open('Distance.in','r')
+    if FileCheck(DISTANCE_BASENAME):
+        f=open(DISTANCE_BASENAME,'r')
         Dist_thresholds=list(map(float, f.readline().split()))
         Mode=f.readline()[54:-1]
         Resid_save=f.readline()[30:]
@@ -606,7 +629,7 @@ def AdNDP_FR():
         Mode='LDFC'
         Resid_save='F'
     #TNV AdNDP.in reading + generating Resid.Dens.
-    f=open('AdNDP.in', 'r')
+    f=open(ADNDP_BASENAME, 'r')
     file=[]
     for i in f:
         file.append(i)
