@@ -1,7 +1,18 @@
-def A():
-    import os
-    from shutil import copyfile
+import os
+import sys
+import re
+import itertools
+import warnings
+from shutil import copyfile
 
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3 version or higher!")
+
+import numpy as np
+import pickle
+
+
+def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
     nbo_fn=input('Enter NBO file name: ')
     mo_fn=input('Enter MO file name: ')
@@ -66,7 +77,7 @@ def A():
         f.close()
         os.remove("AdNDP.in")
         os.remove("Distance.in")
-    
+
         f=open(nbo_fn,'r')
         g=open('alpha\\'+nbo_fn, 'w')
         for i in f:
@@ -89,19 +100,11 @@ def A():
                     g.write(i)
                     trig=False
         print('Alpha and Beta folders with proper MO, NBO, AdNDP.in and Distance.in files have been created. To perform AdNDP analysis for openshell system, please, follow the standart procedure of AdNDP analysis using files in created folders!')
-        g.close()            
+        g.close()
         f.close()
 def AdNDP():
     #AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
 
-    ####LIBRARIES
-    import numpy as np  #For every linear algebra calculations
-    import itertools #For combination generation
-    import re #For text-pattern search
-    import pickle #For residual density save
-
-    #Silence complex warning
-    import warnings
     warnings.filterwarnings("ignore")
 
     #Checking function
@@ -111,7 +114,7 @@ def AdNDP():
             return 1
         except IOError:
             return 0
-    
+
     #Reading Distance.in
     if FileCheck('Distance.in'):
         f=open('Distance.in','r')
@@ -125,23 +128,23 @@ def AdNDP():
             if ghost.startswith('alpha'):
                 spin='A'
             else: spin='B'
-            
+
     else:
         Dist_thresholds=[0 for n in range(number_atoms)]
         Mode='LD'
         Resid_save='T'
     ####READING FILES
-    
+
     #TNV AdNDP.in reading + generating Resid.Dens.
     f=open('AdNDP.in', 'r')
     file=[]
     for i in f:
         file.append(i)
     f.close()
-    
+
     thresholds=[]
     basis_per_atom=[]
-    
+
     NBO_file_name=file[1]
     MO_file_name=file[-1]
     number_atoms=int(file[3])
@@ -149,7 +152,7 @@ def AdNDP():
     total_pairs=int(file[7])
     total_basis=int(file[9])
     Residual_density=2*total_pairs
-    
+
     for i in range(number_atoms):
         basis_per_atom.append(int(file[11+i]))
     for i in range(number_atoms):
@@ -160,21 +163,21 @@ def AdNDP():
     for i in thresholds:
         if i>=2:
             print("WARNING! Thresholds can not be higher or equal 2!")
-    
+
     #In case of bugged distance.in
     if len(Dist_thresholds)<number_atoms:
         for i in range(number_atoms-len(Dist_thresholds)):
             Dist_thresholds.append(0)
-            
+
     f=open(NBO_file_name[:-1], 'r')
     trig=False
     if spin=='0':
         system='CS'
     else: system='OS'
-    
+
     #for i in f:
-    #    if trig: 
-    #        if i.startswith(" Alpha Orbitals"): 
+    #    if trig:
+    #        if i.startswith(" Alpha Orbitals"):
     #            system='OS'
     #            break
     #        else:
@@ -202,7 +205,7 @@ def AdNDP():
             if "alpha electrons" in i:
                 alpha=int(i[:7])
                 beta=int(i[26:32])
-                if alpha>beta: 
+                if alpha>beta:
                     #total_pairs-=1
                     Residual_density=alpha+beta
                 break
@@ -210,12 +213,12 @@ def AdNDP():
                 alpha=int(i[34:])
             elif " Number of Beta electrons" in i:
                 beta=int(i[34:])
-                if alpha>beta: 
+                if alpha>beta:
                     #total_pairs-=1
                     Residual_density=alpha+beta
                 break
         f.close()
-        
+
     #Reading Distince matrix
     f=open(NBO_file_name[:-1], 'r')
     num=0
@@ -232,7 +235,7 @@ def AdNDP():
                 Dist.append(list(map(float, i[12:].split())))
         else: pass
     f.close()
-    
+
     #Reshaping of distance matrix
     Dist_FOR=[]
     trig=False
@@ -245,8 +248,8 @@ def AdNDP():
                     Dist[i].append(j)
             Dist_FOR.append(Dist[i])
     else: Dist_FOR=Dist
-    
-    #TNV reading DMNAO from nbo.out     
+
+    #TNV reading DMNAO from nbo.out
     f=open(NBO_file_name[:-1], 'r')
     num=0
     D=[]
@@ -266,7 +269,7 @@ def AdNDP():
             else:
                 pass
     f.close()
-    
+
     #Reshaping of DMNAO
     NAO_string=total_basis
     D_FOR=D[:NAO_string].copy()
@@ -284,8 +287,8 @@ def AdNDP():
             modified.append((sum(basis_per_atom[:i]),sum(basis_per_atom[:i+1])))
         return(modified)
     indexes_D_FOR=index_create()
-    
-    
+
+
     #Creates all possible combinations of N centers
     def combinations(centers):
         modified=[]
@@ -296,10 +299,10 @@ def AdNDP():
                     if Dist_FOR[j[1]][j[0]]>Dist_thresholds[centers-1]:
                         trig=False
                         break
-                if trig: modified.append(i)                
+                if trig: modified.append(i)
         else: modified=list(itertools.combinations(range(number_atoms), centers))
         return modified
-    
+
     #Main function! Searching for 'centers'c-2e bonds on 'atom_centers' centers. If Resid='Y', Density matrix (D_FOR) will be changed.
     #If Core='Y', will searching for 1c-2e core orbitals with ON>1.99|e|. Returns truple (ON, wavefunction in NAO basis set)
     def bonding(centers, atom_centers, Resid='Y', Core='N'):
@@ -334,7 +337,7 @@ def AdNDP():
                     for j in atom_centers:
                         j_+=1
                         D_FOR[indexes_D_FOR[i][0]:indexes_D_FOR[i][1],indexes_D_FOR[j][0]:indexes_D_FOR[j][1]]=Partition[indexes_Partition[i_][0]:indexes_Partition[i_][1],indexes_Partition[j_][0]:indexes_Partition[j_][1]]
-                return((occupancy, wave_function))        
+                return((occupancy, wave_function))
         elif Core=='Y':
             if max(ans[0])>=core_threshold:
                 print('Occupancy of Core', str(centers)+'c-2e bond on ', [n+1 for n in atom_centers],'atom(s) is', np.real(max(ans[0])))
@@ -352,7 +355,7 @@ def AdNDP():
             else: ans=(0,0)
         else: ans=(0,0)
         return(ans)
-    
+
     #Searching for all core orbitals in molecule (will not visualized)
     def core_cut():
         nonlocal Residual_density
@@ -364,7 +367,7 @@ def AdNDP():
                 if ans[0]!=0:
                     core_found+=1
                 if core_found>=(total_pairs-valence_pairs): break
-                    
+
     #Searching for all valence bonds. ATTANTION! If threshold in AdNDP.in==0. than algorithm will ignore this type of bonds.
     Visual=[[] for n in range(number_atoms)] #Matrix for WF
     def bonding_Search_FC():
@@ -389,7 +392,7 @@ def AdNDP():
                         #print('ADDITIONAL:',j[1], res)
             else:
                 print('---------------Ignoring ', str((i+1))+'c-2e bonds!---------------',)
-    
+
     def dep(centers, atom_centers, occ, function):
         nonlocal D_FOR
         dim=0
@@ -416,7 +419,7 @@ def AdNDP():
                 for j in atom_centers:
                     j_+=1
                     D_FOR[indexes_D_FOR[i][0]:indexes_D_FOR[i][1],indexes_D_FOR[j][0]:indexes_D_FOR[j][1]]=Partition[indexes_Partition[i_][0]:indexes_Partition[i_][1],indexes_Partition[j_][0]:indexes_Partition[j_][1]]
-    
+
     def bonding_Search_LDFC():
         nonlocal Residual_density
         nonlocal Visual
@@ -442,7 +445,7 @@ def AdNDP():
                             Residual_density-=res[0]
             else:
                 print('---------------Ignoring ', str((i+1))+'c-2e bonds!---------------',)
-    
+
     def bonding_Search_LD():
         nonlocal Residual_density
         nonlocal Visual
@@ -467,7 +470,7 @@ def AdNDP():
                             Visual[i].append((ans[j][2],np.real(ans[j][1])))
             else:
                 print('---------------Ignoring ', str((i+1))+'c-2e bonds!---------------',)
-    
+
     ####MAIN PROGRAMM
     core_cut()
     print('*************Residual density: ', Residual_density, '|e|*************')
@@ -483,7 +486,7 @@ def AdNDP():
         f=open('Resid.data','wb')
         pickle.dump((D_FOR,Residual_density),f)
         f.close
-    
+
     ####VISUALISING AND CREATION NEW MO FILE
     #TNV reading basis NAO to AO
     f=open(NBO_file_name[:-1], 'r')
@@ -499,7 +502,7 @@ def AdNDP():
             str_counter+=1
             if str_counter>=3:
                 if len(i)>1:
-                    if re.search('(\d)(?:\-{1})(\d)', i)!=None: 
+                    if re.search('(\d)(?:\-{1})(\d)', i)!=None:
                         new_i=re.sub('(\d)(?:\-{1})(\d)', r'\1 -\2', i)
                         B.append(list(map(float, new_i[16:].split())))
                     else:B.append(list(map(float, i[16:].split())))
@@ -508,7 +511,7 @@ def AdNDP():
             else:
                 pass
     f.close()
-    #Reshaping of NAOAO    
+    #Reshaping of NAOAO
     B_FOR=B[:NAO_string].copy()
     Number_of_columns=len(B[0])
     Number_of_AO=(int(len(B)/total_basis)-1)*Number_of_columns+len(B[-1])
@@ -537,7 +540,7 @@ def AdNDP():
                 ans.append(np.dot(Partition_Basis,j[1]))
         return(ans)
     VISS=Visualise(Visual)
-    
+
     if len(VISS)==0: print("****Nothing to visualize!****")
     else:
         Matrix_visual=np.transpose(VISS[0][np.newaxis])
@@ -546,8 +549,8 @@ def AdNDP():
         if np.shape(Matrix_visual)[1]%5!=0:
             for i in range(5-np.shape(Matrix_visual)[1]%5):
                 Matrix_visual=np.hstack((Matrix_visual, np.transpose(np.zeros(total_basis)[np.newaxis])))
-    
-    
+
+
         new=open('mo_new.out', 'w')
         f=open(MO_file_name[:-1], 'r')
         num=0
@@ -576,19 +579,14 @@ def AdNDP():
         new.close()
         f.close()
 def AdNDP_FR():
-    import numpy as np  #For every linear algebra calculations
-    import itertools #For combination generation
-    import re #For text-pattern search
-    import pickle #For residual density save
     f=open('Resid.data', 'rb')
     D_FOR,Residual_density=pickle.load(f)
     f.close()
     ####READING FILES
-    
+
     #Silence complex warning
-    import warnings
     warnings.filterwarnings("ignore")
-    
+
     #Checking function
     def FileCheck(fn):
         try:
@@ -596,7 +594,7 @@ def AdNDP_FR():
             return 1
         except IOError:
             return 0
-    
+
     #Reading Distance.in
     if FileCheck('Distance.in'):
         f=open('Distance.in','r')
@@ -613,17 +611,17 @@ def AdNDP_FR():
     for i in f:
         file.append(i)
     f.close()
-    
+
     thresholds=[]
     basis_per_atom=[]
-    
+
     NBO_file_name=file[1]
     MO_file_name=file[-1]
     number_atoms=int(file[3])
     valence_pairs=int(file[5])
     total_pairs=int(file[7])
     total_basis=int(file[9])
-    
+
     for i in range(number_atoms):
         basis_per_atom.append(int(file[11+i]))
     for i in range(number_atoms):
@@ -634,7 +632,7 @@ def AdNDP_FR():
     for i in thresholds:
         if i>=2:
             print("WARNING! Thresholds can not be higher or equal 2!")
-    
+
     #In case of bugged distance.in
     if len(Dist_thresholds)<number_atoms:
         for i in range(number_atoms-len(Dist_thresholds)):
@@ -648,8 +646,8 @@ def AdNDP_FR():
             modified.append((sum(basis_per_atom[:i]),sum(basis_per_atom[:i+1])))
         return(modified)
     indexes_D_FOR=index_create()
-    
-    
+
+
     #Main function! Searching for 'centers'c-2e bonds on 'atom_centers' centers. If Resid='Y', Density matrix (D_FOR) will be changed.
     #If Core='Y', will searching for 1c-2e core orbitals with ON>1.99|e|. Returns truple (ON, wavefunction in NAO basis set)
     def bonding(centers, atom_centers, Resid='Y', Core='N'):
@@ -684,7 +682,7 @@ def AdNDP_FR():
                     for j in atom_centers:
                         j_+=1
                         D_FOR[indexes_D_FOR[i][0]:indexes_D_FOR[i][1],indexes_D_FOR[j][0]:indexes_D_FOR[j][1]]=Partition[indexes_Partition[i_][0]:indexes_Partition[i_][1],indexes_Partition[j_][0]:indexes_Partition[j_][1]]
-                return((occupancy, wave_function))        
+                return((occupancy, wave_function))
         else:
             if max(ans[0])>=1.99:
                 print('Occupancy of Core', str(centers)+'c-2e bond on ', [n+1 for n in atom_centers],'atom(s) is', np.real(max(ans[0])))
@@ -701,7 +699,7 @@ def AdNDP_FR():
                     return((occupancy, wave_function))
             else: ans=(0,0)
         return(ans)
-    
+
     def bonding_FR(centers, atom_centers, fragment):
         dim=0
         indexes_Partition=[(0,basis_per_atom[atom_centers[0]])]
@@ -729,11 +727,11 @@ def AdNDP_FR():
             for j in atom_centers:
                 j_+=1
                 D_FOR[indexes_D_FOR[i][0]:indexes_D_FOR[i][1],indexes_D_FOR[j][0]:indexes_D_FOR[j][1]]=Partition[indexes_Partition[i_][0]:indexes_Partition[i_][1],indexes_Partition[j_][0]:indexes_Partition[j_][1]]
-        return((occupancy, wave_function))        
-                    
+        return((occupancy, wave_function))
+
     #Searching for all valence bonds. ATTANTION! If threshold in AdNDP.in==0. than algorithm will ignore this type of bonds.
     Visual=[[] for n in range(number_atoms)] #Matrix for WF
-    
+
     def bonding_Search_FR(Orbitals,add,fragment):
         nonlocal Residual_density
         nonlocal Visual
@@ -741,7 +739,7 @@ def AdNDP_FR():
             ans=bonding_FR(len(add),add,fragment)
             Visual[len(add)-1].append((add, ans[1]))
             Residual_density-=ans[0]
-    
+
     def dep(centers, atom_centers, occ, function):
         nonlocal D_FOR
         dim=0
@@ -768,7 +766,7 @@ def AdNDP_FR():
                 for j in atom_centers:
                     j_+=1
                     D_FOR[indexes_D_FOR[i][0]:indexes_D_FOR[i][1],indexes_D_FOR[j][0]:indexes_D_FOR[j][1]]=Partition[indexes_Partition[i_][0]:indexes_Partition[i_][1],indexes_Partition[j_][0]:indexes_Partition[j_][1]]
-                    
+
     def bonding_Search_LD_FR(add, orbitals):
         nonlocal Residual_density
         nonlocal Visual
@@ -783,8 +781,8 @@ def AdNDP_FR():
                     print('LD: Occupancy of ', str(i+1)+'c-2e bond on ', [n+1 for n in ans[j][2]], 'atom(s) is ', ans[j][0])
                     Residual_density-=ans[j][0]
                     Visual[i].append((ans[j][2],np.real(ans[j][1])))
-                    
-    
+
+
         ####MAIN PROGRAMM
     print('---------------Residual density: ', Residual_density, '|e|----------------\n')
     if input('Symmetry search?(Y/N): ')=="N":
@@ -815,9 +813,9 @@ def AdNDP_FR():
             Fragment_list.append(add)
         Orbitals=int(input('Enter the number of orbitals in each fragment: '))
         bonding_Search_LD_FR(Fragment_list,Orbitals)
-    
+
     print('\n---------------Residual density: ', Residual_density, '|e|----------------')
-    
+
     if input('Do you want to rewrite Resid.data?(Y/N): ')=="Y":
         f=open('Resid.data','wb')
         pickle.dump((D_FOR,Residual_density),f)
@@ -838,7 +836,7 @@ def AdNDP_FR():
             str_counter+=1
             if str_counter>=3:
                 if len(i)>1:
-                    if re.search('(\d)(?:\-{1})(\d)', i)!=None: 
+                    if re.search('(\d)(?:\-{1})(\d)', i)!=None:
                         new_i=re.sub('(\d)(?:\-{1})(\d)', r'\1 -\2', i)
                         B.append(list(map(float, new_i[16:].split())))
                     else:B.append(list(map(float, i[16:].split())))
@@ -847,7 +845,7 @@ def AdNDP_FR():
             else:
                 pass
     f.close()
-    #Reshaping of NAOAO    
+    #Reshaping of NAOAO
     NAO_string=total_basis
     B_FOR=B[:NAO_string].copy()
     Number_of_columns=len(B[0])
@@ -877,15 +875,15 @@ def AdNDP_FR():
                 ans.append(np.dot(Partition_Basis,j[1]))
         return(ans)
     VISS=Visualise(Visual)
-    
+
     Matrix_visual=np.transpose(VISS[0][np.newaxis])
     for i in VISS[1:]:
         Matrix_visual=np.hstack((Matrix_visual, np.transpose(i[np.newaxis])))
     if np.shape(Matrix_visual)[1]%5!=0:
         for i in range(5-np.shape(Matrix_visual)[1]%5):
             Matrix_visual=np.hstack((Matrix_visual, np.transpose(np.zeros(total_basis)[np.newaxis])))
-    
-    
+
+
     new=open('mo_new_FR.out', 'w')
     f=open(MO_file_name[:-1], 'r')
     num=0
@@ -914,28 +912,31 @@ def AdNDP_FR():
     new.close()
     f.close()
 
-import sys
-if sys.version_info[0] < 3:
-    raise Exception("Must be using Python 3 version or higher!")
-import importlib
-ans=True
-trigA=True
-trigF=True
-openshell=False
-while ans:
-    choice=input("""1) Create AdNDP.in and Distance.in files.
-2) AdNDP analysis.
-3) AdNDP direct search.
-4) Quit.
-""")
-    if choice=="1":
-        A()
-    elif choice=="2":
-        AdNDP()
-    elif choice=="3":
-        AdNDP_FR()
-    elif choice=="4":
-        print('Goodbye!\nUtah State University, 2019.\nCite this work as: Physical Chemistry Chemical Physics, 2019, DOI: 10.1039/C9CP00379G')
-        ans=False
-    else: print('Wrong input!')
-        
+
+def main():
+    ans=True
+    trigA=True
+    trigF=True
+    openshell=False
+    while ans:
+        choice=input("""1) Create AdNDP.in and Distance.in files.
+    2) AdNDP analysis.
+    3) AdNDP direct search.
+    4) Quit.
+    """)
+        if choice=="1":
+            A()
+        elif choice=="2":
+            AdNDP()
+        elif choice=="3":
+            AdNDP_FR()
+        elif choice=="4":
+            print('Goodbye!\nUtah State University, 2019.\nCite this work as: Physical Chemistry Chemical Physics, 2019, DOI: 10.1039/C9CP00379G')
+            ans=False
+        else:
+            print('Wrong input!')
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
