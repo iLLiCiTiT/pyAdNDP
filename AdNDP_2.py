@@ -1140,6 +1140,18 @@ def direct_search_adndp_interactive():
     f.close()
 
 
+def user_get_number(message):
+    while True:
+        response = input(message).strip().lower()
+        if response in EXIT_WORDS:
+            break
+        try:
+            return int(response)
+        except Exception:
+            print(f"That is not a number: {response}")
+    return None
+
+
 def user_get_bool(message):
     while True:
         response = input(message).strip().lower()
@@ -1177,6 +1189,19 @@ def user_get_enum(message, values):
         if response in values:
             return response
         print("Please try it again...")
+    return None
+
+
+def user_get_list_of_numbers(message):
+    while True:
+        response = input(message)
+        if response.strip().lower() in EXIT_WORDS:
+            break
+
+        try:
+            return list(map(int, response.split()))
+        except Exception:
+            print("Invalid input. Please try it again...")
     return None
 
 
