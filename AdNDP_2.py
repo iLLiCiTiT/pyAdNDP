@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import copy
 import itertools
 import collections
 import warnings
@@ -111,6 +112,11 @@ class AdNDPContent(object):
 
         self.basis_funcs_per_atom = basis_funcs_per_atom
 
+    def create_distance(self, mode, resid_save, spin):
+        return DistanceContent(
+            copy.deepcopy(self.thresholds), mode, resid_save, spin
+        )
+
     def save_to_file(self, adndp_path):
         joined_bea = "\n".join(
             str(value) for value in self.basis_funcs_per_atom
@@ -141,6 +147,32 @@ class AdNDPContent(object):
             stream.write(adndp_content)
 
 
+class DistanceContent(object):
+    def __init__(self, thresholds, mode, resid_save, spin):
+        system = "OS"
+        core_threshold = 0.99
+        if spin == "0":
+            system = "CS"
+            core_threshold = 1.999
+
+        self.thresholds = thresholds
+        self.mode = mode
+        self.resid_save = resid_save
+        self.spin = spin
+        self.system = system
+        self.core_threshold = core_threshold
+
+    def save_to_file(self, distance_path):
+        joined_dist = " ".join(str(threshold) for threshold in self.thresholds)
+        distance_content = (
+            f"{joined_dist}\n"
+            "Mode(LD-Late Depleting, FC-\"Found-Cut\", LDFC-hybrid): LD\n"
+            "Save Residual Density Matrix: T\n"
+        )
+        with open(distance_path, "w+") as stream:
+            stream.write(distance_content)
+
+
 def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
     nbo_fn=input('Enter NBO file name: ')
@@ -152,14 +184,10 @@ def A():
     adndp_content = reader.create_adndp()
     adndp_content.save_to_file(ADNDP_BASENAME)
 
-    NAtoms = adndp_content.amount_of_atoms
-
-    f = open(DISTANCE_BASENAME, 'w+')
-    Dist=[0 for n in range(NAtoms)]
-    f.write(' '.join(str(n) for n in Dist)+'\n')
-    f.write('Mode(LD-Late Depleting, FC-"Found-Cut", LDFC-hybrid): LD\n')
-    f.write('Save Residual Density Matrix: T\n')
-    f.close()
+    distance_content = adndp_content.create_distance(
+        "LD", "T", "0"
+    )
+    distance_content.save_to_file(DISTANCE_BASENAME)
 
     if system=="Y":
         print('Switching to Open Shell mode preparing mode...')
