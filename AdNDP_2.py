@@ -16,6 +16,7 @@ import pickle
 EXIT_WORDS = {"exit", "quit", "q"}
 ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
+BETA_SEP = " *******         Beta  spin orbitals         *******"
 
 
 def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
