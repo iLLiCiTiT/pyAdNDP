@@ -228,21 +228,23 @@ class DistanceContent(object):
             stream.write(distance_content)
 
 
-def create_adndp(nbo_path, mo_path, separate, output_dir=None):
+def create_adndp(nbo_path, mo_path, separate, work_dir=None):
     """Create AdBDP output.
 
     Args:
         nbo_path (str): Path to nbo file.
         mo_path (str): Path to mo file.
         separate (bool): Separate Alpha anb Beta electron.
-        output_dir (str): Where output files will be stored.
+        work_dir (str): Where output files will be stored.
     """
 
+    if not work_dir:
+        work_dir = os.path.abspath(os.getcwd())
     nbo_path = os.path.abspath(nbo_path)
     mo_path = os.path.abspath(mo_path)
 
-    adndp_path = os.path.abspath(ADNDP_BASENAME)
-    distance_path = os.path.abspath(DISTANCE_BASENAME)
+    adndp_path = os.path.join(work_dir, ADNDP_BASENAME)
+    distance_path = os.path.join(work_dir, DISTANCE_BASENAME)
 
     reader = LogsReader(nbo_path, mo_path)
 
