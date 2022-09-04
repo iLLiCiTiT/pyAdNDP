@@ -5,7 +5,7 @@ import copy
 import itertools
 import collections
 import warnings
-from shutil import copyfile
+import shutil
 
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3 version or higher!")
@@ -16,6 +16,59 @@ import pickle
 ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
 
+
+def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
+    alpha_dir = os.path.abspath("alpha")
+    beta_dir = os.path.abspath("beta")
+    if not os.path.exists(alpha_dir):
+        os.mkdir(alpha_dir)
+
+    if not os.path.exists(beta_dir):
+        os.mkdir(beta_dir)
+
+    nbo_basename = os.path.basename(nbo_path)
+    mo_basename = os.path.basename(mo_path)
+    adndp_basename = os.path.basename(adndp_path)
+    distance_basename = os.path.basename(distance_path)
+
+    alpha_mo_path = os.path.join(alpha_dir, mo_basename)
+    beta_mo_path = os.path.join(beta_dir, mo_basename)
+    alpha_nbo_path = os.path.join(alpha_dir, nbo_basename)
+    beta_nbo_path = os.path.join(beta_dir, nbo_basename)
+    alpha_adndp_path = os.path.join(alpha_dir, adndp_basename)
+    beta_adndp_path = os.path.join(beta_dir, adndp_basename)
+    alpha_distance_path = os.path.join(alpha_dir, distance_basename)
+    beta_distance_path = os.path.join(beta_dir, distance_basename)
+
+    shutil.copyfile(nbo_path, alpha_mo_path)
+    shutil.copyfile(mo_path, beta_mo_path)
+    shutil.copyfile(adndp_path, alpha_adndp_path)
+    shutil.copyfile(adndp_path, beta_adndp_path)
+    shutil.copyfile(distance_path, alpha_distance_path)
+    shutil.copyfile(distance_path, beta_distance_path)
+
+    with open(alpha_distance_path, "a") as stream:
+        stream.write("\nalpha")
+
+    with open(beta_distance_path, "a") as stream:
+        stream.write("\nbeta")
+
+    in_alpha_part = True
+    with (
+        open(alpha_nbo_path, "w")
+    ) as a_stream, (
+        open(beta_nbo_path, "w")
+    ) as b_stream, (
+        nbo_path
+    ) as nbo_stream:
+        for line in nbo_stream.readlines():
+            if in_alpha_part:
+                if line.startswith(BETA_SEP):
+                    in_alpha_part = False
+                else:
+                    a_stream.write(line)
+            else:
+                b_stream.write(line)
 
 
 class LogsReader(object):
@@ -175,82 +228,39 @@ class DistanceContent(object):
 
 def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
-    nbo_fn=input('Enter NBO file name: ')
-    mo_fn=input('Enter MO file name: ')
-    nbo_fn = os.path.abspath(nbo_fn)
-    mo_fn = os.path.abspath(mo_fn)
+    nbo_path = input('Enter NBO file name: ')
+    mo_path = input('Enter MO file name: ')
+    nbo_path = os.path.abspath(nbo_path)
+    mo_path = os.path.abspath(mo_path)
 
-    reader = LogsReader(nbo_fn, mo_fn)
+    adndp_path = os.path.abspath(ADNDP_BASENAME)
+    distance_path = os.path.abspath(DISTANCE_BASENAME)
+
+    reader = LogsReader(nbo_path, mo_path)
     adndp_content = reader.create_adndp()
-    adndp_content.save_to_file(ADNDP_BASENAME)
+    adndp_content.save_to_file(adndp_path)
 
     distance_content = adndp_content.create_distance(
         "LD", "T", "0"
     )
-    distance_content.save_to_file(DISTANCE_BASENAME)
+    distance_content.save_to_file(distance_path)
 
-    if system=="Y":
-        print('Switching to Open Shell mode preparing mode...')
+    if system != "Y":
+        return
 
-        alpha_dir = os.path.abspath("alpha")
-        beta_dir = os.path.abspath("beta")
-        if not os.path.exists(alpha_dir):
-            os.mkdir(alpha_dir)
+    print("Switching to Open Shell mode preparing mode...")
 
-        if not os.path.exists(beta_dir):
-            os.mkdir(beta_dir)
+    separate_alpha_beta(
+        nbo_path, mo_path, adndp_path, distance_path
+    )
+    print((
+        "Alpha and Beta folders with proper MO, NBO,"
+        f" {adndp_path} and {distance_path} files have been created."
+        " To perform AdNDP analysis for openshell system, please, follow the"
+        " standart procedure of AdNDP analysis using files in created folders!"
+    ))
 
-        nbo_basename = os.path.basename(nbo_fn)
-        mo_basename = os.path.basename(mo_fn)
-        alpha_mo_path = os.path.join(alpha_dir, mo_basename)
-        beta_mo_path = os.path.join(beta_dir, mo_basename)
-        alpha_nbo_path = os.path.join(alpha_dir, nbo_basename)
-        beta_nbo_path = os.path.join(beta_dir, nbo_basename)
-        alpha_adndp_path = os.path.join(alpha_dir, ADNDP_BASENAME)
-        beta_adndp_path = os.path.join(beta_dir, ADNDP_BASENAME)
-        alpha_distance_path = os.path.join(alpha_dir, DISTANCE_BASENAME)
-        beta_distance_path = os.path.join(beta_dir, DISTANCE_BASENAME)
 
-        copyfile(mo_fn, alpha_mo_path)
-        copyfile(mo_fn, beta_mo_path)
-        copyfile(ADNDP_BASENAME, alpha_adndp_path)
-        copyfile(ADNDP_BASENAME, beta_adndp_path)
-        copyfile(DISTANCE_BASENAME, alpha_distance_path)
-        copyfile(DISTANCE_BASENAME, beta_distance_path)
-
-        f=open(alpha_distance_path, 'a')
-        f.write('\nalpha')
-        f.close()
-        f=open(beta_distance_path, 'a')
-        f.write('\nbeta')
-        f.close()
-        os.remove(ADNDP_BASENAME)
-        os.remove(DISTANCE_BASENAME)
-
-        f=open(nbo_fn,'r')
-        g=open(alpha_nbo_path, 'w')
-        for i in f:
-            if not(i.startswith(' *******         Beta  spin orbitals         *******')):
-                g.write(i)
-            else: break
-        g.close()
-        g=open(beta_nbo_path, 'w')
-        f.close()
-        f=open(nbo_fn,'r')
-        trig=False
-        for i in f:
-            if not(i.startswith(' *******         Alpha spin orbitals         *******')) and not(trig):
-                g.write(i)
-            else: trig=True
-            if trig:
-                if not(i.startswith(' *******         Beta  spin orbitals         *******')):
-                    pass
-                else:
-                    g.write(i)
-                    trig=False
-        print('Alpha and Beta folders with proper MO, NBO, AdNDP.in and Distance.in files have been created. To perform AdNDP analysis for openshell system, please, follow the standart procedure of AdNDP analysis using files in created folders!')
-        g.close()
-        f.close()
 def AdNDP():
     #AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
 
