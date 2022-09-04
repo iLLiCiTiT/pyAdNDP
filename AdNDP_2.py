@@ -4,6 +4,7 @@ import re
 import copy
 import itertools
 import collections
+import argparse
 import warnings
 import shutil
 
@@ -17,6 +18,8 @@ EXIT_WORDS = {"exit", "quit", "q"}
 ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
 RESID_BASENAME = "Resid.data"
+
+ALPHA_SEP = " *******         Alpha spin orbitals         *******"
 BETA_SEP = " *******         Beta  spin orbitals         *******"
 
 
@@ -1437,7 +1440,7 @@ def create_adndp_interactive():
     create_adndp(nbo_path, mo_path, separate)
 
 
-def analysis_adndp_interactive():
+def analyse_adndp_interactive():
     analyse_adndp()
 
 
@@ -1595,7 +1598,7 @@ def interactive():
         if choice == "1":
             create_adndp_interactive()
         elif choice == "2":
-            analysis_adndp_interactive()
+            analyse_adndp_interactive()
         elif choice == "3":
             direct_search_adndp_interactive()
         elif choice == "4" or choice is None:
@@ -1611,10 +1614,93 @@ def interactive():
 
 
 def main():
-    # Silence complex warning
     warnings.filterwarnings("ignore")
 
-    return interactive()
+    main_parser = argparse.ArgumentParser()
+    commands_subparser = main_parser.add_subparsers(
+        title="command",
+        dest="command"
+    )
+    create_parser = commands_subparser.add_parser(
+        "create",
+        help="Create AdNDP"
+    )
+    create_parser.add_argument(
+        "--nbo_input",
+        "-nbo",
+        required=True,
+        dest="nbo_path",
+        help="Path to NBO file."
+    )
+    create_parser.add_argument(
+        "--mo_input",
+        "-mo",
+        required=True,
+        dest="mo_path",
+        help="Path to MO file."
+    )
+    create_parser.add_argument(
+        "--separate",
+        "-s",
+        default=False,
+        required=False,
+        action="store_true",
+        dest="separate",
+        help=(
+            "The density matrix is calulated separetely"
+            " for Alpha and Beta electron."
+        )
+    )
+    create_parser.add_argument(
+        "--workdir",
+        "-w",
+        required=False,
+        default=None,
+        dest="work_dir",
+        help="Work directory where work files will be created."
+    )
+
+    analysis_parser = commands_subparser.add_parser(
+        "analyse",
+        help="Analysis of AdNDP"
+    )
+    analysis_parser.add_argument(
+        "--workdir",
+        "-w",
+        required=False,
+        default=None,
+        dest="work_dir",
+        help="Work directory from where work files are loaded."
+    )
+
+    search_parser = commands_subparser.add_parser(
+        "search",
+        help="Direct search (NOT IMPLEMENTED)"
+    )
+
+    args = main_parser.parse_args()
+    command = args.command
+    if command is None:
+        return interactive()
+
+    if command == "create":
+        create_adndp(
+            args.nbo_path, args.mo_path, args.separate, args.work_dir
+        )
+        return 0
+
+    if command == "analyse":
+        analyse_adndp(args.work_dir)
+        return 0
+
+    if command == "search":
+        raise NotImplementedError(
+            "Direct search command is not implemented yet"
+        )
+
+    raise NotImplementedError("Unknown launch arguments {}".format(
+        " ".join(sys.argv)
+    ))
 
 
 if __name__ == "__main__":
