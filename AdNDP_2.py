@@ -32,10 +32,10 @@ def matrix_recalculations(
     only_first=False
 ):
     for p_i, d_i in enumerate(atom_centers):
+        d_i_start, d_i_end = src_indexes[d_i]
+        p_i_start, p_i_end = dst_indexes[p_i]
         for p_j, d_j in enumerate(atom_centers):
-            d_i_start, d_i_end = src_indexes[d_i]
             d_j_start, d_j_end = src_indexes[d_j]
-            p_i_start, p_i_end = dst_indexes[p_i]
             p_j_start, p_j_end = dst_indexes[p_j]
             dst_matrix[p_i_start:p_i_end, p_j_start:p_j_end] = (
                 src_matrix[d_i_start:d_i_end, d_j_start:d_j_end]
