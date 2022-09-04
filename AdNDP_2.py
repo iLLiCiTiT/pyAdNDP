@@ -1326,6 +1326,9 @@ def create_adndp(nbo_path, mo_path, separate, work_dir=None):
         nbo_path, mo_path, adndp_path, distance_path
     )
 
+    os.remove(adndp_path)
+    os.remove(distance_path)
+
     print((
         "Alpha and Beta folders with proper MO, NBO,"
         f" {adndp_path} and {distance_path} files have been created."
