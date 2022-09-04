@@ -295,6 +295,42 @@ class AdNDPContent(object):
 
         self.basis_funcs_per_atom = basis_funcs_per_atom
 
+        self._indexes_d_for = None
+        self._log_reader = None
+        self._distince_matris = None
+
+    @property
+    def log_reader(self):
+        if self._log_reader is None:
+            self._log_reader = LogsReader(self.nbo_path, self.mo_path)
+        return self._log_reader
+
+    def get_residual_density(self, system, spin):
+        residual_density = self.log_reader.find_residual_density(system, spin)
+        if residual_density is None:
+            residual_density = 2 * self.total_pairs
+        return residual_density
+
+    @property
+    def distince_matris(self):
+        if self._distince_matris is None:
+            self._distince_matris = self.log_reader.get_distince_matris(
+                self.amount_of_atoms
+            )
+        return self._distince_matris
+
+    @property
+    def indexes_d_for(self):
+        if self._indexes_d_for is None:
+            self._indexes_d_for = [
+                (
+                    sum(self.basis_funcs_per_atom[:idx]),
+                    sum(self.basis_funcs_per_atom[:idx + 1])
+                )
+                for idx in range(self.amount_of_atoms)
+            ]
+        return self._indexes_d_for
+
     def create_distance(self, mode, resid_save, spin):
         return DistanceContent(
             copy.deepcopy(self.thresholds), mode, resid_save, spin
