@@ -1391,6 +1391,28 @@ def analyse_adndp(work_dir=None):
         print("****Nothing to visualize!****")
 
 
+def direct_search_adndp_args(
+    symetry_search,
+    fragments,
+    orbitals,
+    overwrite_resid,
+    work_dir=None
+):
+    analysis = AdNDPAnalysis(work_dir)
+    print((
+        "---------------"
+        f"Residual density: {analysis.residual_density}"
+        "|e|----------------\n"
+    ))
+    direct_search_adndp(
+        symetry_search,
+        fragments,
+        orbitals,
+        overwrite_resid,
+        analysis
+    )
+
+
 def direct_search_adndp(
     fragments,
     orbitals,
