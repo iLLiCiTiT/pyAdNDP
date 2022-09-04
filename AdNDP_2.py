@@ -274,7 +274,7 @@ def create_adndp(nbo_path, mo_path, separate, output_dir=None):
 def analyse_adndp():
     #AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
 
-    warnings.filterwarnings("ignore")
+
 
     #Checking function
     def FileCheck(fn):
@@ -754,10 +754,6 @@ def direct_search_adndp_interactive():
     D_FOR,Residual_density=pickle.load(f)
     f.close()
     ####READING FILES
-
-    #Silence complex warning
-    warnings.filterwarnings("ignore")
-
     #Checking function
     def FileCheck(fn):
         try:
@@ -1179,6 +1175,9 @@ def interactive():
 
 
 def main():
+    # Silence complex warning
+    warnings.filterwarnings("ignore")
+
     return interactive()
 
 
