@@ -1590,16 +1590,20 @@ def interactive():
 
     done = False
     while not done:
-        choice = user_get_enum(
-            chices_msg, ["1", "2", "3", "4"]
-        )
-        if choice == "1":
-            create_adndp_interactive()
-        elif choice == "2":
-            analyse_adndp_interactive()
-        elif choice == "3":
-            direct_search_adndp_interactive()
-        elif choice == "4" or choice is None:
+        try:
+            choice = user_get_enum(
+                chices_msg, ["1", "2", "3", "4"]
+            )
+            if choice == "1":
+                create_adndp_interactive()
+            elif choice == "2":
+                analyse_adndp_interactive()
+            elif choice == "3":
+                direct_search_adndp_interactive()
+            elif choice == "4" or choice is None:
+                done = True
+
+        except KeyboardInterrupt:
             done = True
 
     print((
