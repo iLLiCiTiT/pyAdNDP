@@ -201,6 +201,46 @@ class AdNDPContent(object):
         with open(adndp_path, "w") as stream:
             stream.write(adndp_content)
 
+    @classmethod
+    def from_file(cls, adndp_path):
+        # TNV AdNDP.in reading + generating Resid.Dens.
+        with open(adndp_path, "r") as stream:
+            adndp_lines = stream.readlines()
+
+        nbo_path = adndp_lines[1].strip()
+        mo_path = adndp_lines[-1].strip()
+        amount_of_atoms = int(adndp_lines[3])
+        valence_pairs = int(adndp_lines[5])
+        total_pairs = int(adndp_lines[7])
+        total_basis_funcs = int(adndp_lines[9])
+
+        basis_funcs_per_atom = []
+        for idx in range(amount_of_atoms):
+            basis_funcs_per_atom.append(int(adndp_lines[idx + 11]))
+
+        thresholds = []
+        for idx in range(amount_of_atoms):
+            thresholds.append(float(adndp_lines[idx + amount_of_atoms + 12]))
+
+        # TNV input warning
+        if sum(basis_funcs_per_atom) != total_basis_funcs:
+            print("WARNING! Number of total basis functions is wrong!")
+
+        for threshold in thresholds:
+            if threshold >= 2:
+                print("WARNING! Thresholds can not be higher or equal 2!")
+
+        return cls(
+            nbo_path,
+            mo_path,
+            amount_of_atoms,
+            valence_pairs,
+            total_pairs,
+            total_basis_funcs,
+            basis_funcs_per_atom,
+            thresholds
+        )
+
 
 class DistanceContent(object):
     def __init__(self, thresholds, mode, resid_save, spin):
@@ -226,6 +266,24 @@ class DistanceContent(object):
         )
         with open(distance_path, "w+") as stream:
             stream.write(distance_content)
+
+    @classmethod
+    def from_file(cls, distance_path):
+        with open(distance_path, "r") as stream:
+            distance_lines = collections.deque(stream.readlines())
+
+        thresholds = list(map(float, distance_lines.popleft().split()))
+        mode = distance_lines.popleft()[54:-1]
+        resid_save = distance_lines.popleft()[30:-1]
+        spin = "0"
+        distance_lines.popleft()
+        ghost = distance_lines.popleft()
+        if len(ghost) > 1:
+            if ghost.startswith("alpha"):
+                spin = "A"
+            else:
+                spin = "B"
+        return cls(thresholds, mode, resid_save, spin)
 
 
 def create_adndp(nbo_path, mo_path, separate, work_dir=None):
