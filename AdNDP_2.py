@@ -1582,6 +1582,7 @@ def direct_search_adndp_interactive():
 
 def interactive():
     chices_msg = (
+        "Please select a command:\n"
         "1) Create AdNDP.in and Distance.in files.\n"
         "2) AdNDP analysis.\n"
         "3) AdNDP direct search.\n"
@@ -1602,6 +1603,9 @@ def interactive():
                 direct_search_adndp_interactive()
             elif choice == "4" or choice is None:
                 done = True
+
+            if not done:
+                print("")
 
         except KeyboardInterrupt:
             done = True
