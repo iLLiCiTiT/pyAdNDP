@@ -16,6 +16,7 @@ import pickle
 EXIT_WORDS = {"exit", "quit", "q"}
 ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
+RESID_BASENAME = "Resid.data"
 BETA_SEP = " *******         Beta  spin orbitals         *******"
 
 
@@ -291,9 +292,9 @@ class AdNDPContent(object):
         self.valence_pairs = valence_pairs
         self.total_pairs = total_pairs
         self.total_basis_funcs = total_basis_funcs
-        self.thresholds = thresholds
 
         self.basis_funcs_per_atom = basis_funcs_per_atom
+        self.thresholds = thresholds
 
         self._indexes_d_for = None
         self._log_reader = None
@@ -456,6 +457,37 @@ class DistanceContent(object):
             else:
                 spin = "B"
         return cls(thresholds, mode, resid_save, spin)
+
+
+class AdNDPAnalysis(object):
+    def __init__(self, work_dir=None):
+        if not work_dir:
+            work_dir = os.getcwd()
+        work_dir = os.path.abspath(work_dir)
+        distance_path = os.path.join(work_dir, DISTANCE_BASENAME)
+        adndp_path = os.path.join(work_dir, ADNDP_BASENAME)
+
+        adndp_content = AdNDPContent.from_file(adndp_path)
+
+        distance_content = DistanceContent.from_file(distance_path)
+        distance_content.fill_thresholds_from_adndp(adndp_content)
+
+        self._work_dir = work_dir
+        self._adndp_content = adndp_content
+        self._distance_content = distance_content
+
+        # Attributes filled dynamically on demand
+        self._residual_density = None # Change value during processing
+        # Reshaped distance matrix
+        self._distince_matris_mod = None
+        self._dmnao = None
+        self._dmnao_mod = None # Change value during processing
+        self._dmnao_mod_indexes = None
+
+        self._dmao = None
+        self._dmao_mod = None # Change value during processing
+
+        self._visual = None # Change value during processing
 
 
 def create_adndp(nbo_path, mo_path, separate, work_dir=None):
