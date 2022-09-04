@@ -270,66 +270,7 @@ def create_adndp(nbo_path, mo_path, separate, output_dir=None):
     ))
 
 
-def user_get_bool(message):
-    while True:
-        response = input(message).strip().lower()
-        if response in EXIT_WORDS:
-            break
-
-        if response in ("y", "1", "yes", "true"):
-            return True
-
-        if response in ("n", "0", "no", "false"):
-            return False
-
-        print("Please try it again...")
-    return None
-
-
-def user_get_path(message):
-    while True:
-        response = input(message)
-        if response.strip().lower() in EXIT_WORDS:
-            break
-
-        if os.path.exists(response):
-            return response
-        print("Entered path was not found. Please try it again...")
-    return None
-
-
-def user_get_enum(message, values):
-    while True:
-        response = input(message)
-        if response.strip().lower() in EXIT_WORDS:
-            break
-
-        if response in values:
-            return response
-        print("Please try it again...")
-    return None
-
-
-def create_adndp_interactive():
-    separate = user_get_bool((
-        "Is the density matrix calulated separetely"
-        " for Alpha and Beta electron? (Y/N): "
-    )).lower()
-    if separate is None:
-        return
-
-    nbo_path = user_get_path("Enter NBO file name: ")
-    if nbo_path is None:
-        return
-
-    mo_path = user_get_path("Enter MO file name: ")
-    if mo_path is None:
-        return
-
-    create_adndp(nbo_path, mo_path, separate)
-
-
-def analysis_adndp_interactive():
+def analyse_adndp():
     #AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
 
     warnings.filterwarnings("ignore")
@@ -1140,6 +1081,69 @@ def direct_search_adndp_interactive():
         else:new.write(i)
     new.close()
     f.close()
+
+
+def user_get_bool(message):
+    while True:
+        response = input(message).strip().lower()
+        if response in EXIT_WORDS:
+            break
+
+        if response in ("y", "1", "yes", "true"):
+            return True
+
+        if response in ("n", "0", "no", "false"):
+            return False
+
+        print("Please try it again...")
+    return None
+
+
+def user_get_path(message):
+    while True:
+        response = input(message)
+        if response.strip().lower() in EXIT_WORDS:
+            break
+
+        if os.path.exists(response):
+            return response
+        print("Entered path was not found. Please try it again...")
+    return None
+
+
+def user_get_enum(message, values):
+    while True:
+        response = input(message)
+        if response.strip().lower() in EXIT_WORDS:
+            break
+
+        if response in values:
+            return response
+        print("Please try it again...")
+    return None
+
+
+def create_adndp_interactive():
+    separate = user_get_bool((
+        "Is the density matrix calulated separetely"
+        " for Alpha and Beta electron? (Y/N): "
+    )).lower()
+    if separate is None:
+        return
+
+    nbo_path = user_get_path("Enter NBO file name: ")
+    if nbo_path is None:
+        return
+
+    mo_path = user_get_path("Enter MO file name: ")
+    if mo_path is None:
+        return
+
+    create_adndp(nbo_path, mo_path, separate)
+
+
+def analysis_adndp_interactive():
+    analyse_adndp()
 
 
 def interactive():
