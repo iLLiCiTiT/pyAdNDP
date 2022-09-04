@@ -111,6 +111,35 @@ class AdNDPContent(object):
 
         self.basis_funcs_per_atom = basis_funcs_per_atom
 
+    def save_to_file(self, adndp_path):
+        joined_bea = "\n".join(
+            str(value) for value in self.basis_funcs_per_atom
+        )
+        joined_thresholds = "\n".join(
+            str(value) for value in self.thresholds
+        )
+        adndp_content = (
+            "NBO filename\n"
+            f"{self.nbo_path}\n"
+            "Number of atoms\n"
+            f"{self.amount_of_atoms}\n"
+            "Amount of valence electronic pairs\n"
+            f"{self.valence_pairs}\n"
+            "Total amount of electronic pairs\n"
+            f"{self.total_pairs}\n"
+            "Total amount of basis functions\n"
+            f"{self.total_basis_funcs}\n"
+            "Amount of basis functions on each atom\n"
+            f"{joined_bea}\n"
+            "Occupation number thresholds\n"
+            f"{joined_thresholds}\n"
+            "CMO filename\n"
+            f"{self.mo_path}\n"
+        )
+
+        with open(adndp_path, "w") as stream:
+            stream.write(adndp_content)
+
 
 def A():
     system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
@@ -121,22 +150,9 @@ def A():
 
     reader = LogsReader(nbo_fn, mo_fn)
     adndp_content = reader.create_adndp()
+    adndp_content.save_to_file(ADNDP_BASENAME)
 
     NAtoms = adndp_content.amount_of_atoms
-    VEP = adndp_content.valence_pairs
-    TEP = adndp_content.total_pairs
-    BF = adndp_content.total_basis_funcs
-    BEA = adndp_content.basis_funcs_per_atom
-    f=open(ADNDP_BASENAME, 'w')
-    f.write('NBO filename\n'+nbo_fn+'\nNumber of atoms\n'+str(NAtoms)+'\nAmount of valence electronic pairs\n'+str(VEP)+'\n')
-    f.write('Total amount of electronic pairs\n'+str(TEP)+'\nTotal amount of basis functions\n'+str(BF)+'\nAmount of basis functions on each atom\n')
-    for i in BEA:
-        f.write(str(i)+'\n')
-    f.write('Occupation number thresholds\n')
-    for i in BEA:
-        f.write('0.\n')
-    f.write('CMO filename\n'+mo_fn+'\n')
-    f.close()
 
     f = open(DISTANCE_BASENAME, 'w+')
     Dist=[0 for n in range(NAtoms)]
