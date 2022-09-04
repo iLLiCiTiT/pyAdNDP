@@ -421,6 +421,14 @@ class DistanceContent(object):
         self.system = system
         self.core_threshold = core_threshold
 
+    def fill_thresholds_from_adndp(self, adndp_content):
+        thresholds_len = len(self.thresholds)
+        if thresholds_len >= adndp_content.amount_of_atoms:
+            return
+
+        for _ in range(adndp_content.amount_of_atoms - thresholds_len):
+            self.thresholds.append(0)
+
     def save_to_file(self, distance_path):
         joined_dist = " ".join(str(threshold) for threshold in self.thresholds)
         distance_content = (
