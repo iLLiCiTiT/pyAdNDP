@@ -298,6 +298,18 @@ def user_get_path(message):
     return None
 
 
+def user_get_enum(message, values):
+    while True:
+        response = input(message)
+        if response.strip().lower() in EXIT_WORDS:
+            break
+
+        if response in values:
+            return response
+        print("Please try it again...")
+    return None
+
+
 def create_adndp_interactive():
     separate = user_get_bool((
         "Is the density matrix calulated separetely"
@@ -317,7 +329,7 @@ def create_adndp_interactive():
     create_adndp(nbo_path, mo_path, separate)
 
 
-def AdNDP():
+def analysis_adndp_interactive():
     #AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
 
     warnings.filterwarnings("ignore")
@@ -793,7 +805,9 @@ def AdNDP():
             else:new.write(i)
         new.close()
         f.close()
-def AdNDP_FR():
+
+
+def direct_search_adndp_interactive():
     f=open('Resid.data', 'rb')
     D_FOR,Residual_density=pickle.load(f)
     f.close()
@@ -1128,29 +1142,39 @@ def AdNDP_FR():
     f.close()
 
 
-def main():
-    ans=True
-    trigA=True
-    trigF=True
-    openshell=False
-    while ans:
-        choice=input("""1) Create AdNDP.in and Distance.in files.
-    2) AdNDP analysis.
-    3) AdNDP direct search.
-    4) Quit.
-    """)
-        if choice=="1":
+def interactive():
+    chices_msg = (
+        "1) Create AdNDP.in and Distance.in files.\n"
+        "2) AdNDP analysis.\n"
+        "3) AdNDP direct search.\n"
+        "4) Quit.\n"
+    )
+
+    done = False
+    while not done:
+        choice = user_get_enum(
+            chices_msg, ["1", "2", "3", "4"]
+        )
+        if choice == "1":
             create_adndp_interactive()
-        elif choice=="2":
-            AdNDP()
-        elif choice=="3":
-            AdNDP_FR()
-        elif choice=="4":
-            print('Goodbye!\nUtah State University, 2019.\nCite this work as: Physical Chemistry Chemical Physics, 2019, DOI: 10.1039/C9CP00379G')
-            ans=False
-        else:
-            print('Wrong input!')
+        elif choice == "2":
+            analysis_adndp_interactive()
+        elif choice == "3":
+            direct_search_adndp_interactive()
+        elif choice == "4" or choice is None:
+            done = True
+
+    print((
+        "\nGoodbye!"
+        "\nUtah State University, 2019."
+        "\nCite this work as: Physical Chemistry Chemical Physics,"
+        " 2019, DOI: 10.1039/C9CP00379G\n"
+    ))
     return 0
+
+
+def main():
+    return interactive()
 
 
 if __name__ == "__main__":
