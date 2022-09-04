@@ -1423,7 +1423,7 @@ def create_adndp_interactive():
     separate = user_get_bool((
         "Is the density matrix calulated separetely"
         " for Alpha and Beta electron? (Y/N): "
-    )).lower()
+    ))
     if separate is None:
         return
 
