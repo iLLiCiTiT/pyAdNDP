@@ -78,6 +78,19 @@ class LogsReader(object):
         self._nbo_path = nbo_path
         self._mo_path = mo_path
 
+    @property
+    def nbo_path(self):
+        return self._nbo_path
+
+    @property
+    def mo_path(self):
+        return self._mo_path
+
+    def readlines(self):
+        with open(self.nbo_path, "r") as stream:
+            for line in stream:
+                yield line
+
     def create_adndp(self):
         # amount of atoms
         amount_of_atoms = None
@@ -142,6 +155,121 @@ class LogsReader(object):
             basis_funcs_per_atom,
             thresholds
         )
+
+    def find_residual_density(self, system, spin):
+        if system == "OS":
+            for line in self.readlines():
+                if (
+                    "alpha electrons" not in line
+                    or "beta electrons" not in line
+                ):
+                    continue
+
+                line_parts = line.split()
+                if spin == "A":
+                    return int(line_parts[0])
+                return int(line_parts[3])
+            return None
+
+        alpha = None
+        beta = None
+        for line in self.readlines():
+            if "alpha electrons" in line:
+                alpha = int(line[:7])
+                beta = int(line[26:32])
+                if alpha > beta:
+                    return alpha + beta
+                break
+
+            elif " Number of Alpha electrons" in line:
+                alpha = int(line[34:])
+
+            elif " Number of Beta electrons" in line:
+                beta = int(line[34:])
+                if alpha > beta:
+                    return alpha + beta
+                break
+        return None
+
+    def get_distince_matris(self, amount_of_atoms):
+        some_calc = (
+            -(-amount_of_atoms // 5)
+            * (amount_of_atoms + 1)
+            - 5
+            * ((-(-amount_of_atoms // 5) - 1) / 2)
+            * (-(-amount_of_atoms // 5)) + 1
+        )
+
+        dist = []
+        dist_matrix_started = False
+        dist_matrix_counter = 0
+        for line in self.readlines():
+            if not dist_matrix_started:
+                if not line.startswith(
+                    "                    Distance matrix (angstroms)"
+                ):
+                    continue
+                dist_matrix_started = True
+
+            dist_matrix_counter += 1
+            if (
+                dist_matrix_counter >= 2
+                and not (line.startswith("         "))
+                and dist_matrix_counter <= some_calc
+            ):
+                dist.append(list(map(float, line[12:].split())))
+        return dist
+
+    def get_dmnao(self):
+        # TNV reading DMNAO from nbo.out
+        dmnao = []
+        dmnao_enabled = False
+        dmnao_counter = 0
+        for line in self.readlines():
+            if (
+                line.startswith("          NAO")
+                or line.startswith("           NAO")
+            ):
+                dmnao_enabled = True
+                dmnao_counter = 0
+
+            if not dmnao_enabled:
+                continue
+
+            dmnao_counter += 1
+            if dmnao_counter >= 3:
+                if len(line) > 1:
+                    dmnao.append(list(map(float, line[16:].split())))
+                else:
+                    dmnao_enabled = False
+        return dmnao
+
+    def get_dmao(self):
+        dmao = []
+        dmao_enabled = False
+        dmao_counter = 0
+        for line in self.readlines():
+            if (
+                line.startswith("          AO")
+                or line.startswith("           AO")
+            ):
+                dmao_enabled = True
+                dmao_counter = 0
+
+            if not dmao_enabled:
+                continue
+
+            dmao_counter += 1
+            if dmao_counter < 3:
+                continue
+
+            if len(line) > 1:
+                if re.search("(\d)(?:\-{1})(\d)", line) is not None:
+                    line = re.sub("(\d)(?:\-{1})(\d)", r"\1 -\2", line)
+                dmao.append(list(map(float, line[16:].split())))
+            else:
+                dmao_enabled = False
+        return dmao
 
 
 class AdNDPContent(object):
