@@ -16,27 +16,6 @@ ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
 
 
-class AdNDPContent(object):
-    def __init__(
-        self,
-        nbo_path,
-        mo_path,
-        amount_of_atoms,
-        valence_pairs,
-        total_pairs,
-        total_basis_funcs,
-        basis_funcs_per_atom
-    ):
-        self.nbo_path = nbo_path
-        self.mo_path = mo_path
-
-        self.amount_of_atoms = amount_of_atoms
-        self.valence_pairs = valence_pairs
-        self.total_pairs = total_pairs
-        self.total_basis_funcs = total_basis_funcs
-
-        self.basis_funcs_per_atom = basis_funcs_per_atom
-
 
 class LogsReader(object):
     def __init__(self, nbo_path, mo_path):
@@ -95,6 +74,7 @@ class LogsReader(object):
                     basis_funcs_per_atom[idx] = counter
 
         basis_funcs_per_atom = basis_funcs_per_atom or []
+        thresholds = [0.0 for _ in basis_funcs_per_atom]
 
         return AdNDPContent(
             self.nbo_path,
@@ -103,8 +83,33 @@ class LogsReader(object):
             valence_electron_pairs or 0,
             total_electro_pairs or 0,
             total_basis_funcs or 0,
-            basis_funcs_per_atom
+            basis_funcs_per_atom,
+            thresholds
         )
+
+
+class AdNDPContent(object):
+    def __init__(
+        self,
+        nbo_path,
+        mo_path,
+        amount_of_atoms,
+        valence_pairs,
+        total_pairs,
+        total_basis_funcs,
+        basis_funcs_per_atom,
+        thresholds
+    ):
+        self.nbo_path = nbo_path
+        self.mo_path = mo_path
+
+        self.amount_of_atoms = amount_of_atoms
+        self.valence_pairs = valence_pairs
+        self.total_pairs = total_pairs
+        self.total_basis_funcs = total_basis_funcs
+        self.thresholds = thresholds
+
+        self.basis_funcs_per_atom = basis_funcs_per_atom
 
 
 def A():
