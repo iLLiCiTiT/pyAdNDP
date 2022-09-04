@@ -14,7 +14,7 @@ A friend on mine asked me to do some smaller fixes of the script and when I saw 
 
 
 ## TODOs
-- cli commands
+- [ ] cli commands
     - [x] create AdNDP
     - [x] analyse
     - [ ] search - is more complicated as requires more inputs
