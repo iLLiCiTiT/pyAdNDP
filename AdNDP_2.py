@@ -88,7 +88,7 @@ def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
     ) as a_stream, (
         open(beta_nbo_path, "w")
     ) as b_stream, (
-        nbo_path
+        open(nbo_path, "r")
     ) as nbo_stream:
         for line in nbo_stream.readlines():
             if in_alpha_part:
