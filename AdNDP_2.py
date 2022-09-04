@@ -13,6 +13,7 @@ if sys.version_info[0] < 3:
 import numpy as np
 import pickle
 
+EXIT_WORDS = {"exit", "quit", "q"}
 ADNDP_BASENAME = "AdNDP.in"
 DISTANCE_BASENAME = "Distance.in"
 
@@ -226,10 +227,16 @@ class DistanceContent(object):
             stream.write(distance_content)
 
 
-def A():
-    system=input('Is the density matrix calulated separetely for Alpha and Beta electron? (Y/N): ')
-    nbo_path = input('Enter NBO file name: ')
-    mo_path = input('Enter MO file name: ')
+def create_adndp(nbo_path, mo_path, separate, output_dir=None):
+    """Create AdBDP output.
+
+    Args:
+        nbo_path (str): Path to nbo file.
+        mo_path (str): Path to mo file.
+        separate (bool): Separate Alpha anb Beta electron.
+        output_dir (str): Where output files will be stored.
+    """
+
     nbo_path = os.path.abspath(nbo_path)
     mo_path = os.path.abspath(mo_path)
 
@@ -237,6 +244,7 @@ def A():
     distance_path = os.path.abspath(DISTANCE_BASENAME)
 
     reader = LogsReader(nbo_path, mo_path)
+
     adndp_content = reader.create_adndp()
     adndp_content.save_to_file(adndp_path)
 
@@ -245,7 +253,7 @@ def A():
     )
     distance_content.save_to_file(distance_path)
 
-    if system != "Y":
+    if not separate:
         return
 
     print("Switching to Open Shell mode preparing mode...")
@@ -253,12 +261,60 @@ def A():
     separate_alpha_beta(
         nbo_path, mo_path, adndp_path, distance_path
     )
+
     print((
         "Alpha and Beta folders with proper MO, NBO,"
         f" {adndp_path} and {distance_path} files have been created."
         " To perform AdNDP analysis for openshell system, please, follow the"
         " standart procedure of AdNDP analysis using files in created folders!"
     ))
+
+
+def user_get_bool(message):
+    while True:
+        response = input(message).strip().lower()
+        if response in EXIT_WORDS:
+            break
+
+        if response in ("y", "1", "yes", "true"):
+            return True
+
+        if response in ("n", "0", "no", "false"):
+            return False
+
+        print("Please try it again...")
+    return None
+
+
+def user_get_path(message):
+    while True:
+        response = input(message)
+        if response.strip().lower() in EXIT_WORDS:
+            break
+
+        if os.path.exists(response):
+            return response
+        print("Entered path was not found. Please try it again...")
+    return None
+
+
+def create_adndp_interactive():
+    separate = user_get_bool((
+        "Is the density matrix calulated separetely"
+        " for Alpha and Beta electron? (Y/N): "
+    )).lower()
+    if separate is None:
+        return
+
+    nbo_path = user_get_path("Enter NBO file name: ")
+    if nbo_path is None:
+        return
+
+    mo_path = user_get_path("Enter MO file name: ")
+    if mo_path is None:
+        return
+
+    create_adndp(nbo_path, mo_path, separate)
 
 
 def AdNDP():
@@ -1084,7 +1140,7 @@ def main():
     4) Quit.
     """)
         if choice=="1":
-            A()
+            create_adndp_interactive()
         elif choice=="2":
             AdNDP()
         elif choice=="3":
