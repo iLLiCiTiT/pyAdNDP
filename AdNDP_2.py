@@ -475,13 +475,14 @@ class DistanceContent(object):
         mode = distance_lines.popleft()[54:-1]
         resid_save = distance_lines.popleft()[30:-1]
         spin = "0"
-        distance_lines.popleft()
-        ghost = distance_lines.popleft()
-        if len(ghost) > 1:
-            if ghost.startswith("alpha"):
-                spin = "A"
-            else:
-                spin = "B"
+        if distance_lines:
+            distance_lines.popleft()
+            ghost = distance_lines.popleft()
+            if len(ghost) > 1:
+                if ghost.startswith("alpha"):
+                    spin = "A"
+                else:
+                    spin = "B"
         return cls(thresholds, mode, resid_save, spin)
 
 
