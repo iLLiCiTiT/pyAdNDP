@@ -7,6 +7,7 @@ import collections
 import argparse
 import warnings
 import shutil
+import time
 
 if sys.version_info[0] < 3:
     raise Exception("Must be using Python 3 version or higher!")
@@ -1299,6 +1300,7 @@ def create_adndp(nbo_path, mo_path, separate, work_dir=None):
         work_dir (str): Where output files will be stored.
     """
 
+    start_time = time.time()
     if not work_dir:
         work_dir = os.path.abspath(os.getcwd())
     nbo_path = os.path.abspath(nbo_path)
@@ -1318,6 +1320,7 @@ def create_adndp(nbo_path, mo_path, separate, work_dir=None):
     distance_content.save_to_file(distance_path)
 
     if not separate:
+        print(f"*** Process took {time.time() - start_time:.3f}s")
         return
 
     print("Switching to Open Shell mode preparing mode...")
@@ -1334,11 +1337,14 @@ def create_adndp(nbo_path, mo_path, separate, work_dir=None):
         f" {adndp_path} and {distance_path} files have been created."
         " To perform AdNDP analysis for openshell system, please, follow the"
         " standart procedure of AdNDP analysis using files in created folders!"
+        f"\n*** Process took {time.time() - start_time:.3f}s"
     ))
 
 
 def analyse_adndp(work_dir=None):
     # AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
+    start_time = time.time()
+
     analysis = AdNDPAnalysis(work_dir)
 
     # TNV
@@ -1370,6 +1376,8 @@ def analyse_adndp(work_dir=None):
     if not analysis.visualise(new_mo_output_path):
         print("****Nothing to visualize!****")
 
+    print(f"*** Process took {time.time() - start_time:.3f}s")
+
 
 def direct_search_adndp_args(
     symetry_search,
@@ -1399,6 +1407,7 @@ def direct_search_adndp(
     overwrite_resid,
     analysis
 ):
+    start_time = time.time()
     if orbitals is None:
         for orbitals, add, idx in fragments:
             analysis.bonding_search_fr(orbitals, add, idx)
@@ -1421,6 +1430,7 @@ def direct_search_adndp(
     new_mo_output_path = os.path.join(analysis.work_dir, "mo_new_FR.out")
     if not analysis.visualise(new_mo_output_path):
         print("****Nothing to visualize!****")
+    print(f"*** Process took {time.time() - start_time:.3f}s")
 
 
 def create_adndp_interactive():
