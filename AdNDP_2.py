@@ -736,6 +736,19 @@ class AdNDPAnalysis(object):
 
         return modified
 
+    def _indexes_and_dim_for_atom_centers(self, atom_centers):
+        basis_funcs_per_atom = self.basis_funcs_per_atom
+        indexes_partition = []
+        prev_part = 0
+        dim = 0
+        for idx, atom_center in enumerate(atom_centers):
+            atom_value = basis_funcs_per_atom[atom_center]
+            dim += atom_value
+            new_part = prev_part + atom_value
+            indexes_partition.append((prev_part, new_part))
+            prev_part = new_part
+        return indexes_partition, dim
+
     def _search_bonding(self, centers, atom_centers, resid="Y", core="N"):
         """Searching for 'centers'c-2e bonds on 'atom_centers' centers.
 
@@ -744,19 +757,12 @@ class AdNDPAnalysis(object):
         Returns truple (ON, wavefunction in NAO basis set)
         """
 
-        basis_funcs_per_atom = self.basis_funcs_per_atom
         dmnao_mod = self.dmnao_mod
         dmnao_mod_indexes = self.dmnao_mod_indexes
 
-        indexes_partition = []
-        prev_part = 0
-        dim = 0
-        for atom_center in atom_centers:
-            atom_value = basis_funcs_per_atom[atom_center]
-            dim += atom_value
-            new_part = prev_part + atom_value
-            indexes_partition.append((prev_part, new_part))
-            prev_part = new_part
+        indexes_partition, dim = (
+            self._indexes_and_dim_for_atom_centers(atom_centers)
+        )
 
         partition = np.zeros(dim ** 2).reshape(dim, dim)
         matrix_recalculations(
@@ -832,21 +838,14 @@ class AdNDPAnalysis(object):
         Returns truple (ON, wavefunction in NAO basis set).
         """
 
-        basis_funcs_per_atom = self.basis_funcs_per_atom
         core_threshold = self.core_threshold
         thresholds = self._adndp_content.thresholds
         dmnao_mod = self.dmnao_mod
         dmnao_mod_indexes = self.dmnao_mod_indexes
 
-        indexes_partition = []
-        prev_part = 0
-        dim = 0
-        for atom_center in atom_centers:
-            atom_value = basis_funcs_per_atom[atom_center]
-            dim += atom_value
-            new_part = prev_part + atom_value
-            indexes_partition.append((prev_part, new_part))
-            prev_part = new_part
+        indexes_partition, dim = (
+            self._indexes_and_dim_for_atom_centers(atom_centers)
+        )
 
         partition = np.zeros(dim ** 2).reshape(dim, dim)
         matrix_recalculations(
@@ -975,20 +974,11 @@ class AdNDPAnalysis(object):
                     self.residual_density -= occupancy
 
     def dep(self, centers, atom_centers, occupancy, wave_function):
-        basis_funcs_per_atom = self.basis_funcs_per_atom
-
         dmnao_mod = self.dmnao_mod
         dmnao_mod_indexes = self.dmnao_mod_indexes
-
-        indexes_partition = []
-        prev_part = 0
-        dim = 0
-        for atom_center in atom_centers:
-            atom_value = basis_funcs_per_atom[atom_center]
-            dim += atom_value
-            new_part = prev_part + atom_value
-            indexes_partition.append((prev_part, new_part))
-            prev_part = new_part
+        indexes_partition, dim = (
+            self._indexes_and_dim_for_atom_centers(atom_centers)
+        )
 
         partition = np.zeros(dim ** 2).reshape(dim, dim)
         matrix_recalculations(
@@ -1156,19 +1146,12 @@ class AdNDPAnalysis(object):
             self.residual_density -= ans[0]
 
     def _bonding_fr(self, centers, atom_centers, fragment):
-        basis_funcs_per_atom = self.basis_funcs_per_atom
         dmnao_mod = self.dmnao_mod
         dmnao_mod_indexes = self.dmnao_mod_indexes
 
-        indexes_partition = []
-        prev_part = 0
-        dim = 0
-        for atom_center in atom_centers:
-            atom_value = basis_funcs_per_atom[atom_center]
-            dim += atom_value
-            new_part = prev_part + atom_value
-            indexes_partition.append((prev_part, new_part))
-            prev_part = new_part
+        indexes_partition, dim = (
+            self._indexes_and_dim_for_atom_centers(atom_centers)
+        )
 
         partition = np.zeros(dim ** 2).reshape(dim, dim)
         matrix_recalculations(
@@ -1204,7 +1187,6 @@ class AdNDPAnalysis(object):
 
     def get_visualisation_content(self):
         visual = self.visual
-        basis_funcs_per_atom = self.basis_funcs_per_atom
         total_basis_funcs = self.total_basis_funcs
         dmao_mod = self.dmao_mod
         # They have same indexes
@@ -1215,15 +1197,9 @@ class AdNDPAnalysis(object):
             for item in items:
                 comb, wave_function = item
 
-                indexes_partition = []
-                prev_part = 0
-                dim = 0
-                for atom_center in comb:
-                    atom_value = basis_funcs_per_atom[atom_center]
-                    dim += atom_value
-                    new_part = prev_part + atom_value
-                    indexes_partition.append((prev_part, new_part))
-                    prev_part = new_part
+                indexes_partition, dim = (
+                    self._indexes_and_dim_for_atom_centers(comb)
+                )
 
                 partition_basis = (
                     np
