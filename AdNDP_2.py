@@ -618,8 +618,7 @@ class AdNDPAnalysis(object):
     def distince_matris(self):
         return self._adndp_content.distince_matris
 
-    @property
-    def residual_density(self):
+    def get_residual_density(self):
         if self._residual_density is None:
             self._residual_density = self._adndp_content.get_residual_density(
                 self._distance_content.system,
@@ -627,9 +626,10 @@ class AdNDPAnalysis(object):
             )
         return self._residual_density
 
-    @residual_density.setter
     def set_residual_density(self, value):
         self._residual_density = value
+
+    residual_density = property(get_residual_density, set_residual_density)
 
     @property
     def dmnao(self):
