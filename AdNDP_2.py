@@ -155,8 +155,8 @@ class LogsReader(object):
 
             if (
                 total_electro_pairs is None
-                and "alpha electrons"
-                in line and "beta electrons" in line
+                and "alpha electrons" in line
+                and "beta electrons" in line
             ):
                 total_electro_pairs = (int(line[:7]) + int(line[24:32])) // 2
 
