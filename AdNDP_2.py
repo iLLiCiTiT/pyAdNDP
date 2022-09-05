@@ -26,21 +26,27 @@ BETA_SEP = " *******         Beta  spin orbitals         *******"
 
 def matrix_recalculations(
     atom_centers,
-    src_matrix,
-    src_indexes,
-    dst_matrix,
-    dst_indexes,
+    matrix,
+    partition,
+    matrix_indexes,
+    partition_indexes,
+    partition_is_dst=False,
     only_first=False
 ):
-    for p_i, d_i in enumerate(atom_centers):
-        d_i_start, d_i_end = src_indexes[d_i]
-        p_i_start, p_i_end = dst_indexes[p_i]
-        for p_j, d_j in enumerate(atom_centers):
-            d_j_start, d_j_end = src_indexes[d_j]
-            p_j_start, p_j_end = dst_indexes[p_j]
-            dst_matrix[p_i_start:p_i_end, p_j_start:p_j_end] = (
-                src_matrix[d_i_start:d_i_end, d_j_start:d_j_end]
-            )
+    for idx_i, atom_center_i in enumerate(atom_centers):
+        p_i_start, p_i_end = partition_indexes[idx_i]
+        m_i_start, m_i_end = matrix_indexes[atom_center_i]
+        for idx_j, atom_center_j in enumerate(atom_centers):
+            p_j_start, p_j_end = partition_indexes[idx_j]
+            m_j_start, m_j_end = matrix_indexes[atom_center_j]
+            if partition_is_dst:
+                partition[p_i_start:p_i_end, p_j_start:p_j_end] = (
+                    matrix[m_i_start:m_i_end, m_j_start:m_j_end]
+                )
+            else:
+                matrix[m_i_start:m_i_end, m_j_start:m_j_end] = (
+                    partition[p_i_start:p_i_end, p_j_start:p_j_end]
+                )
 
         # In some cases there should happen recalculation only on first index
         if only_first:
@@ -770,9 +776,10 @@ class AdNDPAnalysis(object):
         matrix_recalculations(
             atom_centers,
             dmnao_mod,
-            dmnao_mod_indexes,
             partition,
-            indexes_partition
+            dmnao_mod_indexes,
+            indexes_partition,
+            partition_is_dst=True,
         )
 
         ans = np.linalg.eig(partition)
@@ -796,10 +803,11 @@ class AdNDPAnalysis(object):
             )
             matrix_recalculations(
                 atom_centers,
-                partition,
-                indexes_partition,
                 dmnao_mod,
-                dmnao_mod_indexes
+                partition,
+                dmnao_mod_indexes,
+                indexes_partition,
+                partition_is_dst=False,
             )
             return (occupancy, wave_function)
 
@@ -824,11 +832,12 @@ class AdNDPAnalysis(object):
         )
         matrix_recalculations(
             atom_centers,
-            partition,
-            indexes_partition,
             dmnao_mod,
+            partition,
             dmnao_mod_indexes,
-            True
+            indexes_partition,
+            partition_is_dst=False,
+            only_first=True
         )
         return (occupancy, wave_function)
 
@@ -853,9 +862,10 @@ class AdNDPAnalysis(object):
         matrix_recalculations(
             atom_centers,
             dmnao_mod,
-            dmnao_mod_indexes,
             partition,
-            indexes_partition
+            dmnao_mod_indexes,
+            indexes_partition,
+            partition_is_dst=True,
         )
 
         ans = np.linalg.eig(partition)
@@ -883,10 +893,11 @@ class AdNDPAnalysis(object):
             )
             matrix_recalculations(
                 atom_centers,
-                partition,
-                indexes_partition,
                 dmnao_mod,
-                dmnao_mod_indexes
+                partition,
+                dmnao_mod_indexes,
+                indexes_partition,
+                partition_is_dst=False,
             )
             return (occupancy, wave_function)
 
@@ -911,10 +922,11 @@ class AdNDPAnalysis(object):
         )
         matrix_recalculations(
             atom_centers,
-            partition,
-            indexes_partition,
             dmnao_mod,
+            partition,
             dmnao_mod_indexes,
+            indexes_partition,
+            partition_is_dst=False,
             only_first=True
         )
         return (occupancy, wave_function)
@@ -986,9 +998,10 @@ class AdNDPAnalysis(object):
         matrix_recalculations(
             atom_centers,
             dmnao_mod,
-            dmnao_mod_indexes,
             partition,
+            dmnao_mod_indexes,
             indexes_partition,
+            partition_is_dst=True,
         )
 
         partition = (
@@ -999,10 +1012,11 @@ class AdNDPAnalysis(object):
         )
         matrix_recalculations(
             atom_centers,
-            partition,
-            indexes_partition,
             dmnao_mod,
+            partition,
             dmnao_mod_indexes,
+            indexes_partition,
+            partition_is_dst=False,
         )
 
     def _bonding_search_ldfc(self):
@@ -1159,9 +1173,10 @@ class AdNDPAnalysis(object):
         matrix_recalculations(
             atom_centers,
             dmnao_mod,
-            dmnao_mod_indexes,
             partition,
+            dmnao_mod_indexes,
             indexes_partition,
+            partition_is_dst=True,
         )
 
         ans = np.linalg.eig(partition)
@@ -1180,10 +1195,11 @@ class AdNDPAnalysis(object):
         )
         matrix_recalculations(
             atom_centers,
-            partition,
-            indexes_partition,
             dmnao_mod,
+            partition,
             dmnao_mod_indexes,
+            indexes_partition,
+            partition_is_dst=False,
         )
         return (occupancy, wave_function)
 
