@@ -1269,6 +1269,7 @@ class AdNDPAnalysis(object):
         return ans
 
     def visualise(self, new_mo_output_path):
+        print("Visualisation begins...")
         content = self.get_visualisation_content()
         if not content:
             return False
@@ -1330,6 +1331,7 @@ class AdNDPAnalysis(object):
                 else:
                     stream.write(line)
 
+        print("Visualisation Finished")
         return True
 
     def _is_molecular_line(self, line):
