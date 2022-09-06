@@ -89,8 +89,7 @@ def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
     with open(beta_distance_path, "a") as stream:
         stream.write("\nbeta")
 
-    # NOTE: This actually does opposite of origin source code of 'AdNDP_2.py'
-    # - 'a_stream.write(line)' and 'b_stream.write(line)' were swapped there
+    alpha_beta_started = False
     in_alpha_part = True
     with (
         open(alpha_nbo_path, "w")
@@ -100,13 +99,20 @@ def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
         open(nbo_path, "r")
     ) as nbo_stream:
         for line in nbo_stream.readlines():
-            if in_alpha_part:
-                if line.startswith(BETA_SEP):
-                    in_alpha_part = False
-                else:
+            if not alpha_beta_started:
+                if not line.startswith(ALPHA_SEP):
                     a_stream.write(line)
-            else:
-                b_stream.write(line)
+                    b_stream.write(line)
+                    continue
+                alpha_beta_started = True
+
+            if in_alpha_part:
+                if not line.startswith(BETA_SEP):
+                    a_stream.write(line)
+                    continue
+                in_alpha_part = False
+
+            b_stream.write(line)
 
 
 class LogsReader(object):
