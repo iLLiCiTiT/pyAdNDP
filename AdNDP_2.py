@@ -89,6 +89,8 @@ def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
     with open(beta_distance_path, "a") as stream:
         stream.write("\nbeta")
 
+    # NOTE: This actually does opposite of origin source code of 'AdNDP_2.py'
+    # - 'a_stream.write(line)' and 'b_stream.write(line)' were swapped there
     in_alpha_part = True
     with (
         open(alpha_nbo_path, "w")
