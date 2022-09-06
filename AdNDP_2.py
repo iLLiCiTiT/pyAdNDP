@@ -120,8 +120,13 @@ class LogsReader(object):
     def mo_path(self):
         return self._mo_path
 
-    def readlines(self):
+    def nbo_readlines(self):
         with open(self.nbo_path, "r") as stream:
+            for line in stream:
+                yield line
+
+    def mo_readlines(self):
+        with open(self.mo_path, "r") as stream:
             for line in stream:
                 yield line
 
@@ -137,7 +142,7 @@ class LogsReader(object):
         # Basis functions per atom
         basis_funcs_per_atom = None
 
-        lines_queue = collections.deque(self.readlines())
+        lines_queue = collections.deque(self.nbo_readlines())
 
         while lines_queue:
             line = lines_queue.popleft()
@@ -192,7 +197,7 @@ class LogsReader(object):
 
     def find_residual_density(self, system, spin):
         if system == "OS":
-            for line in self.readlines():
+            for line in self.nbo_readlines():
                 if (
                     "alpha electrons" not in line
                     or "beta electrons" not in line
@@ -207,7 +212,7 @@ class LogsReader(object):
 
         alpha = None
         beta = None
-        for line in self.readlines():
+        for line in self.nbo_readlines():
             if "alpha electrons" in line:
                 alpha = int(line[:7])
                 beta = int(line[26:32])
@@ -237,7 +242,7 @@ class LogsReader(object):
         dist = []
         dist_matrix_started = False
         dist_matrix_counter = 0
-        for line in self.readlines():
+        for line in self.nbo_readlines():
             if not dist_matrix_started:
                 if not line.startswith(
                     "                    Distance matrix (angstroms)"
@@ -259,7 +264,7 @@ class LogsReader(object):
         dmnao = []
         dmnao_enabled = False
         dmnao_counter = 0
-        for line in self.readlines():
+        for line in self.nbo_readlines():
             if (
                 line.startswith("          NAO")
                 or line.startswith("           NAO")
@@ -282,7 +287,7 @@ class LogsReader(object):
         dmao = []
         dmao_enabled = False
         dmao_counter = 0
-        for line in self.readlines():
+        for line in self.nbo_readlines():
             if (
                 line.startswith("          AO")
                 or line.startswith("           AO")
@@ -1299,7 +1304,7 @@ class AdNDPAnalysis(object):
         str_counter = 0
         cycle = 0
         with open(new_mo_output_path, "w") as stream:
-            for line in self.log_reader.readlines():
+            for line in self.log_reader.mo_readlines():
                 if not after_molecular and self._is_molecular_line(line):
                     after_molecular = True
 
