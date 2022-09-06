@@ -818,8 +818,8 @@ class AdNDPAnalysis(object):
         if core == "N":
             if resid == "Y":
                 print((
-                    f"Occupancy of {str(centers)}"
-                    f" c-2e bond on {str([n+1 for n in atom_centers])}"
+                    f"Occupancy of {centers}c-2e"
+                    f" bond on {str([n+1 for n in atom_centers])}"
                     f" atom(s) is {np.real(max(ans[0]))}"
                 ))
             occupancy = np.real(max(ans[0]))
@@ -850,8 +850,8 @@ class AdNDPAnalysis(object):
             return ans
 
         print((
-            f"Occupancy of Core {str(centers)}"
-            f"c-2e bond on {str([n+1 for n in atom_centers])}"
+            f"Occupancy of Core {str(centers)}c-2e"
+            f" bond on {str([n+1 for n in atom_centers])}"
             f"atom(s) is {np.real(max(ans[0]))}"
         ))
         occupancy = np.real(max(ans[0]))
@@ -912,8 +912,8 @@ class AdNDPAnalysis(object):
 
             if resid == "Y":
                 print((
-                    f"FC: Occupancy of {str(centers)}"
-                    f" c-2e bond on {str([n + 1 for n in atom_centers])}"
+                    f"FC: Occupancy of {centers}c-2e"
+                    f" bond on {str([n + 1 for n in atom_centers])}"
                     f" atom(s) is {np.real(max(ans[0]))}"
                 ))
 
@@ -940,8 +940,8 @@ class AdNDPAnalysis(object):
             return (0, 0)
 
         print((
-            f"Occupancy of Core {str(centers)}"
-            f" c-2e bond on {str([n+1 for n in atom_centers])}"
+            f"Occupancy of Core {str(centers)}c-2e"
+            f" bond on {str([n+1 for n in atom_centers])}"
             f" atom(s) is {np.real(max(ans[0]))}"
         ))
         occupancy = np.real(max(ans[0]))
@@ -1060,7 +1060,7 @@ class AdNDPAnalysis(object):
             if thresholds[atom_idx] == 0:
                 print((
                     "---------------"
-                    f"Ignoring {str((atom_idx + 1))} c-2e bonds!"
+                    f"Ignoring {str((atom_idx + 1))}c-2e bonds!"
                     "---------------"
                 ))
                 continue
@@ -1085,8 +1085,8 @@ class AdNDPAnalysis(object):
                 if occupancy != 0 and self.residual_density - occupancy > 0:
                     self.dep(atom_idx + 1, comb, occupancy, wave_function)
                     print((
-                        f"LDFC: Occupancy of {str(atom_idx + 1)}"
-                        f" c-2e bond on {str([n + 1 for n in comb])}"
+                        f"LDFC: Occupancy of {str(atom_idx + 1)}c-2e"
+                        f" bond on {str([n + 1 for n in comb])}"
                         f"atom(s) is {occupancy}"
                     ))
                     self.residual_density -= occupancy
@@ -1117,7 +1117,7 @@ class AdNDPAnalysis(object):
             if thresholds[idx] == 0:
                 print((
                     "---------------"
-                    f"Ignoring {str((idx + 1))} c-2e bonds!"
+                    f"Ignoring {str((idx + 1))}c-2e bonds!"
                     "---------------"
                 ))
                 continue
@@ -1150,8 +1150,8 @@ class AdNDPAnalysis(object):
 
                     self.dep(idx + 1, combination, occupancy, wave_function)
                     print((
-                        f"{counter}) LD: Occupancy of {str(idx + 1)}"
-                        f" c-2e bond on {str([n + 1 for n in combination])}"
+                        f"{counter}) LD: Occupancy of {str(idx + 1)}c-2e"
+                        f" bond on {str([n + 1 for n in combination])}"
                         f" atom(s) is {occupancy}"
                     ))
                     counter += 1
@@ -1179,8 +1179,8 @@ class AdNDPAnalysis(object):
 
                 self.dep(idx + 1, fragment, occupancy, wave_function)
                 print((
-                    f"LD: Occupancy of {str(len(fragment))}"
-                    f"c-2e bond on {str([n + 1 for n in fragment])}"
+                    f"LD: Occupancy of {str(len(fragment))}c-2e"
+                    f" bond on {str([n + 1 for n in fragment])}"
                     f"atom(s) is {occupancy}"
                 ))
                 self.residual_density -= occupancy
@@ -1213,8 +1213,9 @@ class AdNDPAnalysis(object):
 
         ans = np.linalg.eig(partition)
         print((
-            f"Direct search on Fragment {fragment}: Occupancy of {centers}"
-            f" c-2e bond on {str([n + 1 for n in atom_centers])}"
+            f"Direct search on Fragment {fragment}:"
+            f" Occupancy of {centers}c-2e"
+            f" bond on {str([n + 1 for n in atom_centers])}"
             f" atom(s) is {np.real(max(ans[0]))}"
         ))
         occupancy = np.real(max(ans[0]))
