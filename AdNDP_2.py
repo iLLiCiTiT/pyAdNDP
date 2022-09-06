@@ -76,7 +76,7 @@ def separate_alpha_beta(nbo_path, mo_path, adndp_path, distance_path):
     alpha_distance_path = os.path.join(alpha_dir, distance_basename)
     beta_distance_path = os.path.join(beta_dir, distance_basename)
 
-    shutil.copyfile(nbo_path, alpha_mo_path)
+    shutil.copyfile(mo_path, alpha_mo_path)
     shutil.copyfile(mo_path, beta_mo_path)
     shutil.copyfile(adndp_path, alpha_adndp_path)
     shutil.copyfile(adndp_path, beta_adndp_path)
