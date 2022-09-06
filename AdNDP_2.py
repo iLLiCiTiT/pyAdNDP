@@ -494,12 +494,13 @@ class DistanceContent(object):
 
 
 class AdNDPAnalysis(object):
-    def __init__(self, work_dir=None):
+    def __init__(self, use_residual_file, work_dir=None):
         if not work_dir:
             work_dir = os.getcwd()
         work_dir = os.path.abspath(work_dir)
         distance_path = os.path.join(work_dir, DISTANCE_BASENAME)
         adndp_path = os.path.join(work_dir, ADNDP_BASENAME)
+        residual_path = os.path.join(work_dir, RESID_BASENAME)
 
         adndp_content = AdNDPContent.from_file(adndp_path)
 
@@ -509,6 +510,10 @@ class AdNDPAnalysis(object):
         self._work_dir = work_dir
         self._adndp_content = adndp_content
         self._distance_content = distance_content
+
+        self._residual_path = residual_path
+
+        self._use_residual_file = use_residual_file
 
         # Attributes filled dynamically on demand
         self._residual_density = None # Change value during processing
@@ -538,7 +543,7 @@ class AdNDPAnalysis(object):
 
     def store_resid_to_file(self, resid_path=None):
         if not resid_path:
-            resid_path = os.path.join(self._work_dir, RESID_BASENAME)
+            resid_path = self._residual_path
 
         with open(resid_path, "wb") as stream:
             pickle.dump(
@@ -619,11 +624,17 @@ class AdNDPAnalysis(object):
         return self._adndp_content.distince_matris
 
     def get_residual_density(self):
-        if self._residual_density is None:
-            self._residual_density = self._adndp_content.get_residual_density(
-                self._distance_content.system,
-                self._distance_content.spin
-            )
+        if self._residual_density is not None:
+            return self._residual_density
+
+        if self._use_residual_file:
+            self._load_resid()
+            return self._residual_density
+
+        self._residual_density = self._adndp_content.get_residual_density(
+            self._distance_content.system,
+            self._distance_content.spin
+        )
         return self._residual_density
 
     def set_residual_density(self, value):
@@ -631,31 +642,52 @@ class AdNDPAnalysis(object):
 
     residual_density = property(get_residual_density, set_residual_density)
 
+    def _load_resid(self):
+        dmnao_mod = None
+        residual_density = None
+        with open(self._residual_path, "rb") as stream:
+            dmnao_mod, residual_density = pickle.load(stream)
+        self._dmnao_mod = dmnao_mod
+        self._residual_density = residual_density
+
     @property
     def dmnao(self):
-        if self._dmnao is None:
-            self._dmnao = self.log_reader.get_dmnao()
+        if self._dmnao is not None:
+            return self._dmnao
+
+        if self._use_residual_file:
+            raise ValueError((
+                "BUG: Tried to use 'dmnao' when residual file"
+                " should be used as source for 'dmnao_mod'."
+            ))
+        self._dmnao = self.log_reader.get_dmnao()
         return self._dmnao
 
     @property
     def dmnao_mod(self):
-        if self._dmnao_mod is None:
-            # Reshaping of DMNAO
-            total_basis_funcs = self.total_basis_funcs
-            dmnao = self.dmnao
-            dmnao_mod = dmnao[:total_basis_funcs].copy()
-            for idx in range(1, (-(-total_basis_funcs // 8))):
-                dmnao_mod = np.concatenate(
-                    (
-                        dmnao_mod,
-                        dmnao[
-                            idx * total_basis_funcs:
-                            (idx + 1) * total_basis_funcs
-                        ]
-                    ),
-                    axis=1
-                )
-            self._dmnao_mod = dmnao_mod
+        if self._dmnao_mod is not None:
+            return self._dmnao_mod
+
+        if self._use_residual_file:
+            self._load_resid()
+            return self._dmnao_mod
+
+        # Reshaping of DMNAO
+        total_basis_funcs = self.total_basis_funcs
+        dmnao = self.dmnao
+        dmnao_mod = dmnao[:total_basis_funcs].copy()
+        for idx in range(1, (-(-total_basis_funcs // 8))):
+            dmnao_mod = np.concatenate(
+                (
+                    dmnao_mod,
+                    dmnao[
+                        idx * total_basis_funcs:
+                        (idx + 1) * total_basis_funcs
+                    ]
+                ),
+                axis=1
+            )
+        self._dmnao_mod = dmnao_mod
         return self._dmnao_mod
 
     @property
@@ -1361,7 +1393,7 @@ def analyse_adndp(work_dir=None):
     # AdNDP_2.0. Tkachenko Nikolay, Boldyrev Alexander. Dec 2018.
     start_time = time.time()
 
-    analysis = AdNDPAnalysis(work_dir)
+    analysis = AdNDPAnalysis(False, work_dir)
 
     # TNV
     if not analysis.dmnao_mod_has_proper_shape():
@@ -1402,7 +1434,7 @@ def direct_search_adndp_args(
     overwrite_resid,
     work_dir=None
 ):
-    analysis = AdNDPAnalysis(work_dir)
+    analysis = AdNDPAnalysis(True, work_dir)
     print((
         "---------------"
         f"Residual density: {analysis.residual_density}"
@@ -1538,7 +1570,7 @@ def user_get_list_of_numbers(message):
 
 
 def direct_search_adndp_interactive():
-    analysis = AdNDPAnalysis()
+    analysis = AdNDPAnalysis(True)
     print((
         "---------------"
         f"Residual density: {analysis.residual_density}"
